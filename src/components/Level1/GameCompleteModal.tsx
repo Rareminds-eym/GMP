@@ -14,6 +14,7 @@ import { useDeviceLayout } from '../../hooks/useOrientation';
 import { useAuth } from '../../contexts/AuthContext';
 import { LevelProgressService } from '../../services/levelProgressService';
 import { useLevelProgress } from '../../hooks/useLevelProgress';
+import { handleLevelCompletion } from '../../utils/levelCompletionHandler';
 
 type GameCompleteModalProps = {
   isVisible: boolean;
@@ -73,6 +74,7 @@ const GameCompleteModal: React.FC<GameCompleteModalProps> = ({
 
       setIsUpdatingProgress(true);
       try {
+        // First, update the level progress table
         const { error } = await LevelProgressService.completeLevel(
           user.id,
           moduleId,
@@ -83,6 +85,24 @@ const GameCompleteModal: React.FC<GameCompleteModalProps> = ({
           console.error('Failed to update level progress:', error);
         } else {
           console.log(`Level ${levelId} of Module ${moduleId} marked as completed`);
+          
+          // Then, handle module completion logic
+          const moduleResult = await handleLevelCompletion(user.id, moduleId, levelId);
+          
+          if (moduleResult.success) {
+            console.log('Module completion check result:', moduleResult.message);
+            
+            if (moduleResult.moduleCompleted) {
+              console.log(`🎉 Module ${moduleId} completed!`);
+              
+              if (moduleResult.nextModuleUnlocked) {
+                console.log(`🔓 Module ${moduleResult.nextModuleId} unlocked!`);
+              }
+            }
+          } else {
+            console.error('Module completion check failed:', moduleResult.message);
+          }
+          
           // Refresh the level progress to update UI with newly unlocked levels
           await refreshProgress();
         }

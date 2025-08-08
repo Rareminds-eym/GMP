@@ -4,6 +4,7 @@ import { Term } from '../../../types/Level2/types';
 import { useAuth } from '../../../contexts/AuthContext';
 import { LevelProgressService } from '../../../services/levelProgressService';
 import { useLevelProgress } from '../../../hooks/useLevelProgress';
+import { handleLevelCompletion } from '../../../utils/levelCompletionHandler';
 import { GameTypeResult } from '../hooks/useScoreAccumulator';
 import { useLevel2Game } from '../hooks/useLevel2Game';
 import { getGameModesByModuleAndType } from '../data/gameModes';
@@ -154,6 +155,7 @@ const ResultsModal: React.FC<ResultsModalProps> = ({
 
       setHasUpdatedProgress(true);
       try {
+        // First, update the level progress table
         const { error } = await LevelProgressService.completeLevel(
           user.id,
           moduleId,
@@ -163,6 +165,23 @@ const ResultsModal: React.FC<ResultsModalProps> = ({
         if (error) {
           // Failed to update level progress
         } else {
+          // Then, handle module completion logic
+          const moduleResult = await handleLevelCompletion(user.id, moduleId, levelId);
+          
+          if (moduleResult.success) {
+            console.log('Module completion check result:', moduleResult.message);
+            
+            if (moduleResult.moduleCompleted) {
+              console.log(`🎉 Module ${moduleId} completed!`);
+              
+              if (moduleResult.nextModuleUnlocked) {
+                console.log(`🔓 Module ${moduleResult.nextModuleId} unlocked!`);
+              }
+            }
+          } else {
+            console.error('Module completion check failed:', moduleResult.message);
+          }
+          
           // Refresh the level progress to update UI with newly unlocked levels
           await refreshProgress();
         }

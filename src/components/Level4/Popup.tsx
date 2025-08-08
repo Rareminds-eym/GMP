@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { calculateMaxScore, calculateStars } from "./utils/scoreCalculator";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabase";
+import { handleLevelCompletion } from "../../utils/levelCompletionHandler";
 
 interface HighScoreEntry {
   score: number;
@@ -581,6 +582,41 @@ export const FeedbackPopup: React.FC<FeedbackPopupProps> = ({
     };
 
     fetchHighScores();
+  }, [open, user, moduleIdNum]);
+
+  // Check if level 4 completion should trigger module completion
+  useEffect(() => {
+    const checkLevelCompletion = async () => {
+      if (!open || !user || !moduleIdNum) return;
+
+      try {
+        console.log('🎯 FeedbackPopup: Checking if Level 4 completion should trigger module completion', {
+          userId: user.id,
+          moduleId: moduleIdNum,
+          levelId: 4
+        });
+
+        // Level 4 is always the last level, so completing it should complete the module
+        const result = await handleLevelCompletion(user.id, moduleIdNum, 4);
+        
+        if (result.success) {
+          console.log('🎯 Level completion result:', result);
+          
+          if (result.moduleCompleted && result.nextModuleUnlocked) {
+            console.log("Completed next module is opened");
+          }
+        } else {
+          console.error('❌ Level completion failed:', result.message);
+        }
+      } catch (error) {
+        console.error('❌ Error checking level completion:', error);
+      }
+    };
+
+    // Only check once when popup opens
+    if (open) {
+      checkLevelCompletion();
+    }
   }, [open, user, moduleIdNum]);
 
   // Temporary debug logging

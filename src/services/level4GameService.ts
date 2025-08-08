@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { ModuleUnlockService } from './moduleUnlockService';
 
 export interface Level4CompletionData {
   userId: string;
@@ -101,7 +102,56 @@ export async function saveLevel4Completion(data: Level4CompletionData): Promise<
       return { data: null, error: result.error };
     }
 
-    return { data: result.data, error: null };
+    // IMPORTANT: Also handle module completion logic
+    // Level 4 is the last level in modules, so completing Level 4 should mark the module as completed
+    try {
+      console.log('Level4GameService: Handling module completion for Level 4...', {
+        userId: data.userId,
+        moduleId: data.moduleId,
+        levelId: 4
+      });
+      
+      const moduleCompletionResult = await ModuleUnlockService.handleLevelCompletion(
+        data.userId,
+        data.moduleId,
+        4 // Level 4 is the last level
+      );
+
+      if (moduleCompletionResult.success) {
+        console.log('Level4GameService: Module completion handled successfully:', moduleCompletionResult.message);
+        
+        // Return both the level 4 summary data and module completion info
+        return { 
+          data: {
+            level4Summary: result.data,
+            moduleCompletion: moduleCompletionResult.data
+          }, 
+          error: null 
+        };
+      } else {
+        console.error('Level4GameService: Failed to handle module completion:', moduleCompletionResult.message);
+        // Still return success for level 4 summary, but log the module completion error
+        return { 
+          data: {
+            level4Summary: result.data,
+            moduleCompletion: null,
+            moduleCompletionError: moduleCompletionResult.error
+          }, 
+          error: null 
+        };
+      }
+    } catch (moduleError) {
+      console.error('Level4GameService: Error in module completion handling:', moduleError);
+      // Still return success for level 4 summary, but log the module completion error
+      return { 
+        data: {
+          level4Summary: result.data,
+          moduleCompletion: null,
+          moduleCompletionError: moduleError
+        }, 
+        error: null 
+      };
+    }
   } catch (error) {
     console.error('Error in saveLevel4Completion:', error);
     return { data: null, error };

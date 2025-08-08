@@ -9,6 +9,12 @@ const initialState: UIState = {
     isSettingsOpen: false,
     isHelpOpen: false,
     isConfirmationOpen: false,
+    isTaskCompletionOpen: false,
+  },
+  taskCompletion: {
+    modalNumber: 1,
+    lastCompletedTask: null,
+    isLastTask: false,
   },
 };
 
@@ -61,8 +67,35 @@ const uiSlice = createSlice({
       state.modals.isSettingsOpen = false;
       state.modals.isHelpOpen = false;
       state.modals.isConfirmationOpen = false;
+      state.modals.isTaskCompletionOpen = false;
     },
-    
+
+    showTaskCompletionModal: (state, action: PayloadAction<{ taskName: string; isLastTask: boolean }>) => {
+      const { taskName, isLastTask } = action.payload;
+      state.modals.isTaskCompletionOpen = true;
+      state.taskCompletion.lastCompletedTask = taskName;
+      state.taskCompletion.isLastTask = isLastTask;
+      state.taskCompletion.modalNumber += 1;
+
+      // Log to console when last task is completed
+      if (isLastTask) {
+        console.log(`🎉 Last task completed! Next modal is opened - Modal #${state.taskCompletion.modalNumber}`);
+      } else {
+        console.log(`✅ Task completed: ${taskName} - Modal #${state.taskCompletion.modalNumber}`);
+      }
+    },
+
+    closeTaskCompletionModal: (state) => {
+      state.modals.isTaskCompletionOpen = false;
+    },
+
+    resetTaskCompletion: (state) => {
+      state.taskCompletion.modalNumber = 1;
+      state.taskCompletion.lastCompletedTask = null;
+      state.taskCompletion.isLastTask = false;
+      state.modals.isTaskCompletionOpen = false;
+    },
+
     resetUI: (state) => {
       state.sidebarOpen = false;
       state.theme = 'light';
@@ -70,6 +103,10 @@ const uiSlice = createSlice({
       state.modals.isSettingsOpen = false;
       state.modals.isHelpOpen = false;
       state.modals.isConfirmationOpen = false;
+      state.modals.isTaskCompletionOpen = false;
+      state.taskCompletion.modalNumber = 1;
+      state.taskCompletion.lastCompletedTask = null;
+      state.taskCompletion.isLastTask = false;
     },
   },
 });

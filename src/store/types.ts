@@ -28,6 +28,12 @@ export interface UIState {
     isSettingsOpen: boolean;
     isHelpOpen: boolean;
     isConfirmationOpen: boolean;
+    isTaskCompletionOpen: boolean;
+  };
+  taskCompletion: {
+    modalNumber: number;
+    lastCompletedTask: string | null;
+    isLastTask: boolean;
   };
 }
 

@@ -10,12 +10,14 @@ interface ModuleMapProps {
   modules: Module[];
   currentModuleId: number;
   onModuleSelect: (id: number) => void;
+  onModuleUnlocked?: (moduleId: number) => void;
 }
 
 const ModuleMap: React.FC<ModuleMapProps> = ({
   modules,
   currentModuleId,
   onModuleSelect,
+  onModuleUnlocked,
 }) => {
   const { isMobile, isHorizontal } = useDeviceLayout();
   const navigate = useNavigate();
@@ -401,6 +403,7 @@ const ModuleMap: React.FC<ModuleMapProps> = ({
                       module={module}
                       onSelect={(id) => navigate(`/modules/${id}`)}
                       isCurrentModule={module.id === currentModuleId}
+                      onModuleUnlocked={onModuleUnlocked}
                     />
                   </div>
                 );

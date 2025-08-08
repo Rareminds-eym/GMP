@@ -1,16 +1,21 @@
-import React from 'react';
-import { Lock, Star, CheckCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Lock, Star, CheckCircle, Loader2 } from 'lucide-react';
 import type { Module } from '../../types/module';
 import { useDeviceLayout } from '../../hooks/useOrientation';
+import { useModuleUnlock } from '../../hooks/useModuleUnlock';
 
 interface ModuleNodeProps {
   module: Module;
   onSelect?: (id: number) => void;
   isCurrentModule: boolean;
+  onModuleUnlocked?: (moduleId: number) => void;
 }
 
-const ModuleNode: React.FC<ModuleNodeProps> = ({ module, onSelect, isCurrentModule }) => {
+const ModuleNode: React.FC<ModuleNodeProps> = ({ module, onSelect, isCurrentModule, onModuleUnlocked }) => {
   const { isMobile, isHorizontal } = useDeviceLayout();
+  const { handleModuleClick, isLoading } = useModuleUnlock();
+  const [isProcessing, setIsProcessing] = useState(false);
+  
   // Reduce size if mobile and horizontal
   const isCompact = isMobile && isHorizontal;
 
@@ -29,10 +34,39 @@ const ModuleNode: React.FC<ModuleNodeProps> = ({ module, onSelect, isCurrentModu
   const orbFontSize = isCompact ? 14 : 20;
   const badgePadding = isCompact ? '0.15rem 0.75rem' : '0.25rem 1.25rem';
 
-  const handleClick = () => {
+  const handleClick = async () => {
+    // Only allow clicks on available or completed modules
     if (module.status === 'available' || module.status === 'completed') {
-      onSelect?.(module.id);
+      setIsProcessing(true);
+      
+      try {
+        // Handle module click to ensure database record exists
+        const result = await handleModuleClick(parseInt(module.id));
+        
+        if (result.success) {
+          console.log('Module click handled successfully:', result.message);
+          
+          // Call the original onSelect callback
+          onSelect?.(parseInt(module.id));
+          
+          // Notify parent if module was unlocked
+          if (result.data?.nextModuleUnlocked) {
+            onModuleUnlocked?.(result.data.nextModuleId);
+          }
+        } else {
+          console.error('Module click failed:', result.message);
+          // Still call onSelect for UI consistency, but log the error
+          onSelect?.(parseInt(module.id));
+        }
+      } catch (error) {
+        console.error('Error handling module click:', error);
+        // Still call onSelect for UI consistency
+        onSelect?.(parseInt(module.id));
+      } finally {
+        setIsProcessing(false);
+      }
     }
+    // Do nothing for locked modules
   };
 
   return (
@@ -66,11 +100,11 @@ const ModuleNode: React.FC<ModuleNodeProps> = ({ module, onSelect, isCurrentModu
       {/* Floating orb/module indicator */}
       <div
         onClick={handleClick}
-        className={`relative z-10 ${module.status === 'locked' ? 'cursor-default' : 'cursor-pointer'}`}
+        className={`relative z-10 ${module.status === 'locked' ? 'cursor-not-allowed' : 'cursor-pointer'}`}
         style={{ marginTop: isCompact ? -20 : -32, transform: `translateY(${isCompact ? 40 : 56}px)` }}
       >
         <div
-          className={`flex items-center justify-center rounded-full border-4 border-white/30 shadow-lg ${module.status !== 'locked' ? 'animate-pulse' : ''}`}
+          className="flex items-center justify-center rounded-full border-4 border-white/30 shadow-lg animate-pulse"
           style={{
             width: orbSize,
             height: orbSize,
@@ -82,10 +116,22 @@ const ModuleNode: React.FC<ModuleNodeProps> = ({ module, onSelect, isCurrentModu
                 : 'linear-gradient(to bottom, #4b5563, #1f2937)',
           }}
         >
-          {/* Module number */}
-          <div className="font-bold text-white" style={{ fontSize: orbFontSize, textShadow: '0 2px 8px #0008' }}>
-            {module.id}
-          </div>
+          {/* Module number, lock icon, or loading indicator */}
+          {isProcessing ? (
+            <Loader2 
+              size={isCompact ? 16 : 24} 
+              className="animate-spin text-white" 
+            />
+          ) : module.status === 'locked' ? (
+            <Lock 
+              size={isCompact ? 16 : 24} 
+              className="text-white/70" 
+            />
+          ) : (
+            <div className="font-bold text-white" style={{ fontSize: orbFontSize, textShadow: '0 2px 8px #0008' }}>
+              {module.id}
+            </div>
+          )}
         </div>
         {/* Orb glow effect */}
         {module.status === 'available' && (
@@ -98,16 +144,14 @@ const ModuleNode: React.FC<ModuleNodeProps> = ({ module, onSelect, isCurrentModu
       {/* Main floating platform */}
       <div
         onClick={handleClick}
-        className={`relative flex flex-col items-center justify-center transition-transform duration-300 ${module.status === 'locked' ? 'cursor-default' : 'cursor-pointer'}`}
+        className={`relative flex flex-col items-center justify-center transition-transform duration-300 ${module.status === 'locked' ? 'cursor-not-allowed' : 'cursor-pointer'}`}
         style={{
           width: platformWidth,
           height: platformHeight,
           background:
             module.status === 'completed'
               ? 'linear-gradient(to bottom right, #6d28d9, #4c1d95, #312e81)'
-              : module.status === 'available'
-              ? 'linear-gradient(to bottom right, #7c3aed, #6d28d9, #3730a3)'
-              : 'linear-gradient(to bottom right, #374151, #1f2937, #111827)',
+              : 'linear-gradient(to bottom right, #7c3aed, #6d28d9, #3730a3)',
           boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
           clipPath: 'ellipse(70% 100% at 50% 100%)',
           borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%',
@@ -116,10 +160,14 @@ const ModuleNode: React.FC<ModuleNodeProps> = ({ module, onSelect, isCurrentModu
           boxSizing: 'border-box',
         }}
         onMouseOver={e => {
-          if (module.status !== 'locked') e.currentTarget.style.transform = 'scale(1.05)';
+          if (module.status !== 'locked') {
+            e.currentTarget.style.transform = 'scale(1.05)';
+          }
         }}
         onMouseOut={e => {
-          if (module.status !== 'locked') e.currentTarget.style.transform = 'scale(1)';
+          if (module.status !== 'locked') {
+            e.currentTarget.style.transform = 'scale(1)';
+          }
         }}
       >
         {/* Platform top surface */}

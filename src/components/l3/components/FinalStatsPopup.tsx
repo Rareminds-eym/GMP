@@ -7,6 +7,8 @@ import { Crown } from 'lucide-react';
 import { useLevel3Statistics, useLevel3Progress } from '../../../store/hooks';
 import { useDeviceLayout } from '../../../hooks/useOrientation';
 import useLevel3Service from '../hooks/useLevel3Service';
+import { handleLevelCompletion } from '../../../utils/levelCompletionHandler';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface FinalStatsPopupProps {
   onClose: () => void;
@@ -32,6 +34,7 @@ export const FinalStatsPopup: React.FC<FinalStatsPopupProps> = ({
   const { isMobile, isHorizontal } = useDeviceLayout();
   const level3Service = useLevel3Service();
   const { getTopThreeBestScores } = level3Service;
+  const { user } = useAuth();
 
   // Redux hooks
   const { overallStats, scenarioResults } = useLevel3Statistics();

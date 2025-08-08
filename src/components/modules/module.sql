@@ -1,3 +1,6 @@
+-- =====================================================
+-- 2. MODULE PROGRESS TABLE
+-- =====================================================
 CREATE TABLE module_progress (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -96,16 +99,16 @@ AS $$
 DECLARE
   v_total_levels integer;
 BEGIN
-  -- Get total levels from module_config table
-  SELECT total_levels INTO v_total_levels
-  FROM module_config
-  WHERE module_id = p_module_id;
-  
-  -- If module not found in config, use default
-  IF v_total_levels IS NULL THEN
-    v_total_levels := 4; -- Default value
+  -- Get total levels from levels table by counting levels for this module
+  SELECT COUNT(*) INTO v_total_levels
+  FROM levels
+  WHERE module_id = p_module_id::text;
+
+  -- If module not found or no levels, use default
+  IF v_total_levels IS NULL OR v_total_levels = 0 THEN
+    v_total_levels := 2; -- Default value based on actual module structure
   END IF;
-  
+
   RETURN v_total_levels;
 END;
 $$;
@@ -218,3 +221,79 @@ CREATE TRIGGER trigger_update_module_progress_updated_at
   BEFORE UPDATE ON module_progress
   FOR EACH ROW
   EXECUTE FUNCTION update_module_progress_updated_at();
+-- =====================================================
+-- 9. LEVEL COMPLETION FUNCTIONS
+-- =====================================================
+
+-- Function: Handle level completion and check if module should be completed
+CREATE OR REPLACE FUNCTION handle_level_completion(
+  p_user_id uuid,
+  p_module_id integer,
+  p_level_id integer
+)
+RETURNS TABLE(
+  module_completed boolean,
+  next_module_unlocked boolean,
+  next_module_id integer
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_total_levels integer;
+  v_is_last_level boolean;
+  v_next_module_id integer;
+  v_next_total_levels integer;
+  v_module_completed boolean := false;
+  v_next_module_unlocked boolean := false;
+BEGIN
+  -- Get total levels for this module
+  SELECT total_levels INTO v_total_levels
+  FROM module_progress
+  WHERE user_id = p_user_id AND module_id = p_module_id;
+  
+  -- If no record found, get from config
+  IF v_total_levels IS NULL THEN
+    v_total_levels := get_module_total_levels(p_module_id);
+  END IF;
+  
+  -- Check if this is the last level
+  v_is_last_level := (p_level_id = v_total_levels);
+  
+  -- If this is the last level, mark module as completed
+  IF v_is_last_level THEN
+    -- Mark current module as completed
+    UPDATE module_progress
+    SET 
+      is_completed = true,
+      updated_at = now()
+    WHERE user_id = p_user_id AND module_id = p_module_id;
+    
+    v_module_completed := true;
+    
+    -- Check if next module exists and unlock it
+    v_next_module_id := p_module_id + 1;
+    
+    -- Check if next module record already exists
+    IF NOT EXISTS (
+      SELECT 1 FROM module_progress 
+      WHERE user_id = p_user_id AND module_id = v_next_module_id
+    ) THEN
+      -- Get total levels for the next module
+      v_next_total_levels := get_module_total_levels(v_next_module_id);
+      
+      -- Only create next module if it has levels (exists in config)
+      IF v_next_total_levels > 0 THEN
+        -- Create record for next module
+        INSERT INTO module_progress (user_id, module_id, total_levels, is_completed)
+        VALUES (p_user_id, v_next_module_id, v_next_total_levels, false);
+        
+        v_next_module_unlocked := true;
+      END IF;
+    END IF;
+  END IF;
+  
+  -- Return results
+  RETURN QUERY SELECT v_module_completed, v_next_module_unlocked, v_next_module_id;
+END;
+$$;
