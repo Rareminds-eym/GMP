@@ -130,9 +130,6 @@ import { useLevel3Persistence } from "../../store/hooks/index";
 // Level 3 Database Service
 import useLevel3Service from "./hooks/useLevel3Service";
 
-// Level Progress Service for level completion
-import { LevelProgressService } from "../../services/levelProgressService";
-
 // Debug Component (temporarily disabled)
 // import { Level3Debug } from "../Debug/Level3Debug";
 

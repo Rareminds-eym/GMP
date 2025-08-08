@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useModuleProgress } from '../../hooks/useModuleProgress';
 import ModuleNode from './ModuleNode';
 import { supabase } from '../../lib/supabase';
+import ModuleDebugger from '../Debug/ModuleDebugger';
 
 interface ModuleContainerProps {
   userId?: string;
@@ -165,6 +166,9 @@ const ModuleContainer: React.FC<ModuleContainerProps> = ({
 
   return (
     <div className="w-full">
+      {/* Debug Component */}
+      {process.env.NODE_ENV === 'development' && <ModuleDebugger />}
+      
       {/* Action Message */}
       {actionMessage && (
         <div className="mb-6 p-4 bg-blue-900/50 border border-blue-500 rounded-lg text-blue-200 text-center">
@@ -207,25 +211,28 @@ const ModuleContainer: React.FC<ModuleContainerProps> = ({
 
       {/* Module Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 justify-items-center">
-        {modules.map((module) => (
-          <div key={module.id} className="relative">
-            <ModuleNode
-              module={{
-                ...module,
-                id: parseInt(module.id) // Convert string id back to number for ModuleNode
-              }}
-              onSelect={handleModuleSelect}
-              isCurrentModule={selectedModuleId === parseInt(module.id)}
-            />
-            
-            {/* Loading overlay for individual modules */}
-            {actionLoading && selectedModuleId === parseInt(module.id) && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-              </div>
-            )}
-          </div>
-        ))}
+        {modules.map((module) => {
+          // Convert module ID to number for comparison
+          const moduleIdNum = parseInt(module.id);
+          
+          return (
+            <div key={module.id} className="relative">
+              <ModuleNode
+                module={module}
+                onSelect={handleModuleSelect}
+                isCurrentModule={selectedModuleId === moduleIdNum}
+                onStatusChange={refreshModules} // Refresh all modules when status changes
+              />
+              
+              {/* Loading overlay for individual modules */}
+              {actionLoading && selectedModuleId === moduleIdNum && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Empty State */}

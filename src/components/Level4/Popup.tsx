@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { calculateMaxScore, calculateStars } from "./utils/scoreCalculator";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabase";
+import { ModuleProgressService } from "../../services/moduleProgressService";
 
 interface HighScoreEntry {
   score: number;
@@ -581,6 +582,41 @@ export const FeedbackPopup: React.FC<FeedbackPopupProps> = ({
     };
 
     fetchHighScores();
+  }, [open, user, moduleIdNum]);
+
+  // Track level completion when popup opens (Level 4 completion means all cases done)
+  useEffect(() => {
+    const trackLevelCompletion = async () => {
+      if (!open || !user || !moduleIdNum) return;
+
+      try {
+        // For Level 4, showing the FeedbackPopup means the user completed all cases
+        // Track this as level completion (Level 4 = level_id 4)
+        const completionResult = await ModuleProgressService.trackLevelCompletion(
+          user.id,
+          moduleIdNum,
+          4 // Level 4
+        );
+
+        if (completionResult.error) {
+          console.error('Error tracking Level 4 completion:', completionResult.error);
+        } else {
+          console.log('✅ Level 4 completion tracked:', completionResult.data);
+          
+          if (completionResult.moduleCompleted) {
+            console.log(`🎉 Module ${moduleIdNum} completed!`);
+          }
+          
+          if (completionResult.nextModuleUnlocked) {
+            console.log(`🔓 Next module unlocked!`);
+          }
+        }
+      } catch (error) {
+        console.error('Exception tracking Level 4 completion:', error);
+      }
+    };
+
+    trackLevelCompletion();
   }, [open, user, moduleIdNum]);
 
   // Temporary debug logging
