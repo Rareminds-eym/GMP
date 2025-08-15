@@ -50,9 +50,6 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
   // Device layout detection
   const { isMobile, isHorizontal } = useDeviceLayout();
   const isMobileHorizontal = isMobile && isHorizontal;
-
-  // State for team score calculation modal
-  const [showTeamScoreModal, setShowTeamScoreModal] = useState(false);
   // Case brief modal state
   const [showCaseBrief, setShowCaseBrief] = useState(false);
 
@@ -2103,6 +2100,12 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
             <ModuleCompleteModal
               level1CompletionTime={gameState.level1CompletionTime}
               onProceed={proceedToLevel2}
+              scenarios={gameState.questions.map((q, idx) => ({
+                caseFile: q.caseFile,
+                violation: gameState.answers[idx]?.violation || '',
+                rootCause: gameState.answers[idx]?.rootCause || '',
+                solution: gameState.answers[idx]?.solution || ''
+              }))}
             />
           ) : null;
         })()}
