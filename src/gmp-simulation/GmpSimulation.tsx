@@ -43,6 +43,7 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
   mode,
   onProceedToLevel2,
 }) => {
+  const navigate = useNavigate();
 
   // State for team score calculation modal (must be inside component)
   const [showTeamScoreModal, setShowTeamScoreModal] = useState(false);
@@ -1711,6 +1712,16 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
           <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
 
           <div className="pixel-border-thick bg-gradient-to-r from-cyan-600 to-blue-600 p-4 max-w-xl w-full text-center relative z-10">
+            {/* Back Button */}
+            <button
+              onClick={() => navigate('/modules')}
+              className="absolute top-4 left-4 flex items-center gap-1 bg-cyan-700 hover:bg-cyan-800 text-white pixel-border px-3 py-1 rounded transition-colors text-xs font-bold z-20"
+              aria-label="Back to Modules"
+            >
+              {/* Use a left arrow icon if available, else text */}
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              Back
+            </button>
             <div className="flex justify-center mb-4">
               <div className="w-12 h-12 bg-cyan-500 pixel-border flex items-center justify-center">
                 <Factory className="w-6 h-6 text-cyan-900" />
