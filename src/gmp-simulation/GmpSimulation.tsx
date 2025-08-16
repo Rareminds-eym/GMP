@@ -2207,7 +2207,7 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
                     onClick={() => setShowCaseBrief(false)}
                     className="pixel-border bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-red-100 hover:text-white transition-all text-lg font-black w-6 h-6 flex items-center justify-center"
                   >
-                    ×
+                    Close
                   </button>
                 </div>
                 <div className="pixel-border bg-gradient-to-r from-gray-700 to-gray-600 p-3">
