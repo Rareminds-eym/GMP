@@ -39,6 +39,11 @@ interface GmpSimulationProps {
   onProceedToLevel2?: () => void;
 }
 
+const GameEngine: React.FC<GmpSimulationProps> = ({
+  mode,
+  onProceedToLevel2,
+}) => {
+  const navigate = useNavigate();
 
 const GameEngine: React.FC<GmpSimulationProps> = ({ mode, onProceedToLevel2 }) => {
   const navigate = useNavigate();
@@ -1710,6 +1715,16 @@ const GameEngine: React.FC<GmpSimulationProps> = ({ mode, onProceedToLevel2 }) =
           <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
 
           <div className="pixel-border-thick bg-gradient-to-r from-cyan-600 to-blue-600 p-4 max-w-xl w-full text-center relative z-10">
+            {/* Back Button */}
+            <button
+              onClick={() => navigate('/modules')}
+              className="absolute top-4 left-4 flex items-center gap-1 bg-cyan-700 hover:bg-cyan-800 text-white pixel-border px-3 py-1 rounded transition-colors text-xs font-bold z-20"
+              aria-label="Back to Modules"
+            >
+              {/* Use a left arrow icon if available, else text */}
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              Back
+            </button>
             {/* Back Button - styled like walkthrough video modal */}
             <div className="absolute top-3 left-3 z-20">
               <button
