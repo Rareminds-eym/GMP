@@ -44,6 +44,9 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
   onProceedToLevel2,
 }) => {
 
+  // Add navigate for routing
+  const navigate = useNavigate();
+
   // State for team score calculation modal (must be inside component)
   const [showTeamScoreModal, setShowTeamScoreModal] = useState(false);
 
@@ -1711,6 +1714,19 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
           <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
 
           <div className="pixel-border-thick bg-gradient-to-r from-cyan-600 to-blue-600 p-4 max-w-xl w-full text-center relative z-10">
+            {/* Back Button - styled like walkthrough video modal */}
+            <div className="absolute top-3 left-3 z-20">
+              <button
+                onClick={() => navigate('/modules')}
+                className="pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black py-1 px-3 pixel-text transition-all flex items-center gap-2 text-xs shadow-lg"
+                aria-label="Back"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                Back
+              </button>
+            </div>
+            {/* Download button is not seen in Back */}
+          
             <div className="flex justify-center mb-4">
               <div className="w-12 h-12 bg-cyan-500 pixel-border flex items-center justify-center">
                 <Factory className="w-6 h-6 text-cyan-900" />

@@ -183,45 +183,61 @@ const levels = [
   //   youtube: ""
   // },
   {
-    title: "HL-1: Design Challenge",
-    objective: "Create quality solutions",
-    bloom: "Evaluating",
-    format: "Process Design",
-    interface: "Interactive Builder",
-    description: "Design and evaluate quality systems from scratch. Build comprehensive solutions that meet regulatory standards and optimize manufacturing processes. Apply advanced GMP principles to create robust quality frameworks.",
-    icon: "🏗️",
-    features: [
-      {
-        icon: '🎯',
-        title: 'Design Objective',
-        color: 'blue',
-        border: 'border-blue-400',
-        text: 'Create comprehensive quality management systems by designing processes, procedures, and controls that ensure regulatory compliance.'
-      },
-      {
-        icon: '⚡',
-        title: 'Interactive Builder',
-        color: 'green',
-        border: 'border-green-400',
-        text: 'Use drag-and-drop tools to construct quality frameworks, design workflows, and build integrated management systems.'
-      },
-      {
-        icon: '🏆',
-        title: 'Evaluation System',
-        color: 'purple',
-        border: 'border-purple-400',
-        text: 'Your designs are evaluated based on completeness, regulatory compliance, efficiency, and real-world applicability.'
-      }
-    ],
-    controls: [
-      { icon: Clock, label: "Timer", tooltip: "Track your design time", gradient: "from-blue-400 to-blue-500" },
-      { icon: Trophy, label: "Score", tooltip: "Your design evaluation score", gradient: "from-amber-400 to-amber-500" },
-      { icon: Target, label: "Progress", tooltip: "Design completion progress", gradient: "from-green-400 to-green-500" },
-      { icon: RotateCcw, label: "Reset", tooltip: "Reset your design", gradient: "from-yellow-400 to-yellow-500" },
-      { icon: Home, label: "Exit", tooltip: "Return to main menu", gradient: "from-blue-400 to-blue-500" }
-    ],
-    youtube: ""
-  },
+  title: "🚀 Welcome to CAPATHon!",
+  objective: "Theme: Root Cause or Bust!",
+  bloom: "🎯 Goal: Spot the violations. Crack the root cause. Score big.",
+  format: "🕹 Hackathon Level 1:",
+  interface: "Level 1: 5 problem statements\nWork as a team of 4\n1 attempt only\n60 mins on the clock",
+  description: [
+    "📊 Scoring:",
+    "Violation Accuracy – 50%",
+    "Root Cause Depth – 50%",
+    "📥 Submission:",
+    "Online, after all 5 problems are done.",
+    "No late entries",
+    "⚡ Pro Tip:",
+    "Divide and conquer — assign roles, stay sharp, beat the clock.",
+    "Don’t go linear. Run two parallel passes on each case:",
+    "Rapid Scan (2–3 mins): Identify likely violations first using a quick checklist (policy breach? data gap? SOP miss? safety lapse?).",
+    "RCA Sprint (3–4 mins): For each flagged violation, draft a one-line root cause using 5 Whys lite (Why → Because → Evidence).",
+    "Then cross-map: If a root cause doesn’t clearly explain a flagged violation (or vice versa), relink or drop it.",
+    "Finish with a 30–45 sec integrity check: Does every violation have one defensible root cause with evidence?",
+    "Assign team roles: Scanner, Mapper, RCA Lead, Timekeeper/QC.",
+    "Stay modular, not sequential."
+  ],
+  icon: "🏗️",
+  features: [
+    {
+      icon: "🎯",
+      title: "Design Objective",
+      color: "blue",
+      border: "border-blue-400",
+      text: "Theme: Root Cause or Bust! Spot the violations. Crack the root cause. Score big."
+    },
+    {
+      icon: "⚡",
+      title: "Interactive Builder",
+      color: "green",
+      border: "border-green-400",
+      text: "Run parallel passes: Rapid Scan for violations, RCA Sprint for root causes, and cross-map for accuracy."
+    },
+    {
+      icon: "🏆",
+      title: "Evaluation System",
+      color: "purple",
+      border: "border-purple-400",
+      text: "Scoring split: Violation Accuracy (50%), Root Cause Depth (50%). Only one attempt, 60 minutes total."
+    }
+  ],
+  controls: [
+    { icon: Clock, label: "Timer", tooltip: "Track your design time", gradient: "from-blue-400 to-blue-500" },
+    { icon: Trophy, label: "Score", tooltip: "Your design evaluation score", gradient: "from-amber-400 to-amber-500" },
+    { icon: Target, label: "Progress", tooltip: "Design completion progress", gradient: "from-green-400 to-green-500" },
+    { icon: RotateCcw, label: "Reset", tooltip: "Reset your design", gradient: "from-yellow-400 to-yellow-500" },
+    { icon: Home, label: "Exit", tooltip: "Return to main menu", gradient: "from-blue-400 to-blue-500" }
+  ],
+  youtube: ""
+},
   {
     title: "HL-2: Innovation Lab",
     objective: "Develop new methodologies",
