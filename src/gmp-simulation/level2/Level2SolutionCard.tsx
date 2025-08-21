@@ -1,0 +1,335 @@
+import React, { useState, useEffect } from "react";
+import { CheckCircle, Search, Target, AlertTriangle } from "lucide-react";
+import {
+  DndContext,
+  DragOverlay,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  MouseSensor,
+  TouchSensor,
+  pointerWithin,
+  rectIntersection
+} from "@dnd-kit/core";
+import { useDeviceLayout } from "../../hooks/useOrientation";
+import { Question } from "../HackathonData";
+
+interface Level2SolutionCardProps {
+  question: Question;
+}
+
+const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question }) => {
+  const { isMobile, isHorizontal } = useDeviceLayout();
+  const isMobileHorizontal = isMobile && isHorizontal;
+  const [selectedSolution, setSelectedSolution] = useState<string>("");
+  const [activeItem, setActiveItem] = useState<{ text: string } | null>(null);
+  const [showCaseChangeIndicator, setShowCaseChangeIndicator] = useState(false);
+  const [previousQuestionId, setPreviousQuestionId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (previousQuestionId && previousQuestionId !== question.id) {
+      setShowCaseChangeIndicator(true);
+      const timer = setTimeout(() => setShowCaseChangeIndicator(false), 3000);
+      return () => clearTimeout(timer);
+    }
+    setPreviousQuestionId(question.id);
+  }, [question.id, previousQuestionId]);
+
+  // DnD sensors and collision detection
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 3 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 0, tolerance: 15 } }),
+    useSensor(PointerSensor, { activationConstraint: { axis: 'x', distance: isMobile ? 1 : 3, delay: 0, tolerance: isMobile ? 15 : 5 } })
+  );
+  const customCollisionDetection = (args: any) => {
+    const pointerCollisions = pointerWithin(args);
+    if (pointerCollisions.length > 0) {
+      const validCollisions = pointerCollisions.filter((collision: any) => collision.id === "solution-drop-zone");
+      if (validCollisions.length > 0) return validCollisions;
+    }
+    const rectCollisions = rectIntersection(args);
+    const validRectCollisions = rectCollisions.filter((collision: any) => collision.id === "solution-drop-zone");
+    return validRectCollisions.length > 0 ? validRectCollisions : [];
+  };
+
+  // Draggable
+  const SolutionDraggable = ({ option }: { option: string }) => {
+    const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+      id: option, // id must match drop zone expectation
+      data: { text: option },
+    });
+    return (
+      <div
+        ref={setNodeRef}
+        {...attributes}
+        {...listeners}
+        className={`pixel-border bg-gradient-to-r from-gray-600 to-gray-700 p-2 text-white text-xs font-bold pixel-text cursor-grab active:cursor-grabbing transition-all select-none ${option === selectedSolution ? 'ring-2 ring-cyan-400' : ''} ${option === question.correctSolution ? 'ring-2 ring-green-400' : ''} ${isDragging ? 'opacity-0' : ''}`}
+        style={transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : {}}
+      >
+        {option}
+      </div>
+    );
+  };
+
+  // Droppable
+  const { setNodeRef: setDropZoneRef, isOver } = useDroppable({ id: "solution-drop-zone", data: { isDropZone: true } });
+
+  // DnD event handlers
+  const handleDragStart = (event: any) => {
+    const { active } = event;
+    const draggedData = active.data.current as { text: string };
+    if (draggedData && draggedData.text) setActiveItem(draggedData);
+  };
+  const handleDragCancel = () => setActiveItem(null);
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+    setActiveItem(null);
+    if (!over) return;
+    if (over.id !== "solution-drop-zone") return;
+    const dropZoneData = over.data.current as { isDropZone?: boolean };
+    if (!dropZoneData?.isDropZone) return;
+    const draggedData = active.data.current as { text: string };
+    if (!draggedData || !draggedData.text) return;
+    // Only allow drop if the dragged id matches a valid option
+    if (shuffledOptions.includes(active.id)) {
+      setSelectedSolution(draggedData.text);
+    }
+  };
+
+  // Shuffle solution options for variety
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+  const shuffledOptions = React.useMemo(() => shuffleArray(question.solutionOptions), [question.solutionOptions]);
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={customCollisionDetection}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
+      <div className="flex flex-col bg-gray-800 overflow-hidden relative" style={{ height: "calc(100vh - 80px)" }}>
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
+        <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
+
+        {/* CASE SCENARIO HEADER (matches Level 1) */}
+        {!isMobileHorizontal && (
+          <div className="relative z-10 pixel-border p-4 m-2 mb-0 bg-gradient-to-r from-cyan-600 to-blue-600">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className={`font-black pixel-text text-lg transition-all duration-500 ${showCaseChangeIndicator 
+                ? 'text-yellow-300 animate-pulse drop-shadow-lg shadow-yellow-400/50 scale-105' 
+                : 'text-cyan-100'
+              }`}>
+                SOLUTION ROUND
+              </h3>
+              {showCaseChangeIndicator && (
+                <div className="flex items-center space-x-2 animate-bounce">
+                  <AlertTriangle className="w-4 h-4 text-yellow-300" />
+                  <span className="text-yellow-300 font-black text-xs pixel-text">
+                    NEW CASE
+                  </span>
+                </div>
+              )}
+            </div>
+            <p className="text-cyan-50 text-sm font-bold">
+              {question.caseFile} <br />
+              Drag the best solution to the drop zone. The correct violation and root cause are shown for reference.
+            </p>
+            {showCaseChangeIndicator && (
+              <div className="mt-2 flex items-center space-x-2">
+                <div className="w-2 h-2 bg-yellow-400 rounded-full animate-ping"></div>
+                <span className="text-yellow-200 text-xs font-bold">
+                  Case scenario has changed - review carefully!
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Main Content (matches Level 1) */}
+        <div className="relative z-10 flex-1 flex p-2 space-x-3 min-h-0">
+          {/* OPTIONS AREA - Left Panel */}
+          <div className="w-1/3 flex-shrink-0 flex flex-col min-h-0">
+            <div className="pixel-border-thick bg-gray-800 p-4 flex-1 overflow-hidden flex flex-col min-h-0 relative">
+              <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
+              <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
+              <div className="relative z-10 flex flex-col h-full min-h-0">
+                <div className="flex items-center space-x-2 mb-3 flex-shrink-0">
+                  <div className="w-6 h-6 bg-cyan-500 pixel-border flex items-center justify-center">
+                    <CheckCircle className="w-4 h-4 text-cyan-900" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-black text-cyan-300 pixel-text">SOLUTION OPTIONS</h2>
+                    {!isMobileHorizontal && (
+                      <div className="text-xs text-gray-400 font-bold">
+                        ITEMS: {shuffledOptions.length} | DRAG TO ZONE
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-cyan-500 scrollbar-track-gray-700">
+                    <div className="space-y-2 p-1">
+                      {shuffledOptions.map((option, index) => (
+                        <div
+                          key={option}
+                          className="animate-slideIn"
+                          style={{ animationDelay: `${index * 100}ms` }}
+                        >
+                          <SolutionDraggable option={option} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* DND DROP ZONE - Middle Panel (match Level 1) */}
+          <div className="flex-1 animate-slideIn flex flex-col min-h-0">
+            <div className="pixel-border-thick bg-gradient-to-br from-cyan-900 to-cyan-800 h-full relative overflow-hidden transition-all duration-300 rounded-lg flex flex-col">
+              {/* Header */}
+              <div className="relative z-10 p-3 flex-shrink-0">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-5 h-5 bg-cyan-800 pixel-border flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-cyan-300" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-black text-white pixel-text">ONE SOLUTION</h3>
+                      <div className="text-cyan-100/80 text-xs">Drop Zone</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Drop Zone */}
+              <div className="px-3 pb-3 flex-1 min-h-0 overflow-y-auto relative z-10">
+                <div
+                  ref={setDropZoneRef}
+                  className={`h-full relative font-[Verdana,Arial,sans-serif]`}
+                >
+                  {isOver && (
+                    <div className="absolute inset-0">
+                      <div className="absolute inset-1 border-2 border-dashed border-cyan-300 animate-pulse rounded-lg"></div>
+                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 border-3 border-yellow-400 rounded-full opacity-60 animate-ping"></div>
+                      <div className="absolute inset-2 bg-cyan-400 opacity-20 animate-pulse rounded-lg"></div>
+                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-black animate-bounce pixel-text">
+                        DROP HERE!
+                      </div>
+                    </div>
+                  )}
+                  <div className="relative z-10 h-full flex flex-col items-center justify-center">
+                    {selectedSolution ? (
+                      <>
+                        <div className="text-center py-2 border-b border-cyan-700/30">
+                          <div className="w-8 h-8 bg-cyan-800 pixel-border mx-auto mb-1 flex items-center justify-center animate-pulse">
+                            <CheckCircle className="w-5 h-5 text-cyan-300" />
+                          </div>
+                          <p className="text-cyan-100 font-black pixel-text text-xs">SOLUTION SELECTED!</p>
+                        </div>
+                        <div className="flex-1 p-3 w-full">
+                          <div className="w-full">
+                            <div className="pixel-border-thick bg-gradient-to-r from-cyan-900 to-cyan-700 p-3 relative overflow-hidden">
+                              <div className="absolute inset-0 bg-pixel-pattern opacity-20"></div>
+                              <div className="relative z-10 flex items-center mb-2">
+                                <div className="w-6 h-6 bg-cyan-800 pixel-border mr-2 flex items-center justify-center flex-shrink-0">
+                                  <CheckCircle className="w-4 h-4 text-cyan-300" />
+                                </div>
+                                <p className="text-white text-xs font-black pixel-text leading-tight">{selectedSolution}</p>
+                              </div>
+                              <div className="absolute top-1 right-1 w-2 h-2 bg-cyan-800 rounded-full animate-ping"></div>
+                            </div>
+                          </div>
+                        </div>
+                        {selectedSolution === question.correctSolution && (
+                          <div className="mt-2 text-green-400 font-bold text-xs">Correct!</div>
+                        )}
+                        {selectedSolution && selectedSolution !== question.correctSolution && (
+                          <div className="mt-2 text-red-400 font-bold text-xs">Incorrect</div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="w-16 h-16 bg-white/20 mx-auto mb-3 flex items-center justify-center rounded-full">
+                          <CheckCircle className="w-8 h-8 text-white/60" />
+                        </div>
+                        <p className="text-white/80 font-bold text-sm">DROP ZONE</p>
+                        <p className="text-white/60 text-xs">Drag solution here</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <DragOverlay dropAnimation={null}>
+              {activeItem ? (
+                <div className="pixel-border bg-gradient-to-r from-cyan-500 to-blue-500 p-2 cursor-grabbing transform scale-110 opacity-95 shadow-2xl pointer-events-none">
+                  <span className="text-white text-xs font-bold pixel-text">{activeItem.text}</span>
+                </div>
+              ) : null}
+            </DragOverlay>
+          </div>
+
+          {/* Correct Violation & Root Cause - Right Panel (unchanged) */}
+          <div className="w-1/3 flex flex-col min-h-0">
+            <div className="pixel-border-thick bg-gradient-to-br from-indigo-900 to-indigo-800 h-full relative overflow-hidden transition-all duration-300 rounded-lg flex flex-col mb-3">
+              <div className="relative z-10 p-3 flex-shrink-0">
+                <div className="flex items-center space-x-2 mb-1">
+                  <div className="w-5 h-5 bg-blue-800 pixel-border flex items-center justify-center">
+                    <Target className="w-3 h-3 text-blue-300" />
+                  </div>
+                  <h3 className="text-xs font-black text-white pixel-text">CORRECT VIOLATION</h3>
+                </div>
+              </div>
+              <div className="flex-1 p-3 flex items-center">
+                <div className="w-full pixel-border-thick bg-gradient-to-r from-blue-900 to-blue-700 p-3 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-pixel-pattern opacity-20"></div>
+                  <div className="relative z-10 flex items-center">
+                    <div className="w-6 h-6 bg-blue-800 pixel-border mr-2 flex items-center justify-center flex-shrink-0">
+                      <Target className="w-4 h-4 text-blue-300" />
+                    </div>
+                    <p className="text-white text-xs font-black pixel-text leading-tight">{question.correctViolation}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="pixel-border-thick bg-gradient-to-br from-purple-900 to-purple-800 h-full relative overflow-hidden transition-all duration-300 rounded-lg flex flex-col">
+              <div className="relative z-10 p-3 flex-shrink-0">
+                <div className="flex items-center space-x-2 mb-1">
+                  <div className="w-5 h-5 bg-purple-800 pixel-border flex items-center justify-center">
+                    <Search className="w-3 h-3 text-purple-300" />
+                  </div>
+                  <h3 className="text-xs font-black text-white pixel-text">CORRECT ROOT CAUSE</h3>
+                </div>
+              </div>
+              <div className="flex-1 p-3 flex items-center">
+                <div className="w-full pixel-border-thick bg-gradient-to-r from-purple-900 to-purple-700 p-3 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-pixel-pattern opacity-20"></div>
+                  <div className="relative z-10 flex items-center">
+                    <div className="w-6 h-6 bg-purple-800 pixel-border mr-2 flex items-center justify-center flex-shrink-0">
+                      <Search className="w-4 h-4 text-purple-300" />
+                    </div>
+                    <p className="text-white text-xs font-black pixel-text leading-tight">{question.correctRootCause}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </DndContext>
+  );
+};
+
+export default Level2SolutionCard;
