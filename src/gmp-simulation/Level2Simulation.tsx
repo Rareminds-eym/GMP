@@ -56,6 +56,7 @@ const Level2Simulation: React.FC = () => {
 
   // Eligibility check
   useEffect(() => {
+    if (!email) return; // Only check when email is available
     const checkLevel2Access = async () => {
       setCanAccessLevel2(null); // loading
       const allowed = await isLevel2Allowed(email, session_id);
@@ -77,8 +78,20 @@ const Level2Simulation: React.FC = () => {
   // UI rendering
   if (canAccessLevel2 === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-800">
-        <div className="text-white text-lg font-bold animate-pulse">Checking access...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="flex flex-col items-center">
+          <div className="mb-6">
+            <svg className="animate-spin h-16 w-16 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+          </div>
+          <div className="text-white text-xl font-bold mb-2 animate-pulse">Verifying your eligibility for Level 2...</div>
+          <div className="text-gray-300 text-sm text-center max-w-xs">
+            Please wait while we securely check your credentials and access rights.<br />
+            This ensures only qualified participants proceed to the next round.
+          </div>
+        </div>
       </div>
     );
   }
