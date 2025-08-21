@@ -163,7 +163,7 @@ const Level2Screen3: React.FC = () => {
       <div className="fixed inset-0 bg-scan-lines opacity-20"></div>
       
       <div
-        className={`relative z-10 max-w-6xl mx-auto flex flex-col w-full ${isMobileHorizontal ? 'px-0 py-1 pb-20' : 'px-1 xs:px-2 sm:px-4 py-2 xs:py-3 sm:py-6 pb-24'}`}
+        className={`relative z-10 max-w-6xl mx-auto flex flex-col w-full ${isMobileHorizontal ? 'px-0 py-1 pb-5' : 'px-1 xs:px-2 sm:px-4 py-2 xs:py-3 sm:py-6 pb-5'}`}
       >
         {/* Header */}
         <Header 

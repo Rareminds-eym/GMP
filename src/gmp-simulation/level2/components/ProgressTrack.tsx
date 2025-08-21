@@ -61,10 +61,10 @@ const ProgressTrack: React.FC<ProgressTrackProps> = ({
               return (
                 <div
                   key={stageNumber}
-                  className={`relative group cursor-pointer transition-all duration-300 transform ${
+                  className={`relative group transition-all duration-300 transform ${
                     isCurrent ? 'scale-110' : 'hover:scale-105'
-                  }`}
-                  onClick={() => handleStageClick(stageNumber)}
+                  } cursor-default`}
+                  // onClick removed to disable stage change
                 >
                   {/* Connection Line */}
                   {index < 8 && (

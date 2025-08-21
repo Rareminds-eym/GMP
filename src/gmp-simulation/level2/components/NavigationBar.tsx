@@ -10,7 +10,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
   onProceed
 }) => {
   return (
-    <div className={`fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-gray-900 via-gray-800/95 to-transparent ${isMobileHorizontal ? 'p-1' : 'p-4'}`}>
+    <div className={` bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-gray-900 via-gray-800/95 to-transparent ${isMobileHorizontal ? 'p-1' : 'p-4'}`}>
       <div className="max-w-6xl mx-auto">
         <div className={`pixel-border-thick bg-gray-900/90 relative overflow-hidden ${isMobileHorizontal ? 'p-2' : 'p-4'}`}>
           <div className="absolute inset-0 bg-pixel-pattern opacity-5"></div>
