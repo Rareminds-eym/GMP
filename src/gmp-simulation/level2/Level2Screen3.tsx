@@ -104,7 +104,7 @@ const Level2Screen3: React.FC = () => {
       color: "from-gray-500 to-slate-500", 
       bgColor: "from-gray-900/20 to-slate-900/20",
       accent: "gray",
-      description: "Show your solution in action"
+      description: "Optional: Show your solution in action"
     },
     { 
       icon: Lightbulb, 
@@ -129,7 +129,7 @@ const Level2Screen3: React.FC = () => {
       case 5: return speedScale.length > 0;
       case 6: return impact.length > 0;
       case 7: return true; // Final statement is always complete
-      case 8: return file !== null;
+      case 8: return true; // Prototype/Demo/Sketch is optional
       case 9: return reflection.length > 0;
       default: return false;
     }
@@ -139,15 +139,15 @@ const Level2Screen3: React.FC = () => {
 
   return (
   <div
-    className={`min-h-screen bg-gray-800 overflow-hidden relative flex flex-col${isMobileHorizontal ? ' compact-mobile-horizontal' : ''}`}
-    style={{ fontFamily: 'Verdana, Geneva, Tahoma, sans-serif', maxHeight: '100vh', height: '100vh' }}
+    className={`min-h-screen bg-gray-800 relative flex flex-col${isMobileHorizontal ? ' compact-mobile-horizontal' : ''}`}
+    style={{ fontFamily: 'Verdana, Geneva, Tahoma, sans-serif' }}
   >
       {/* Background Pattern */}
-      <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
-      <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
+      <div className="fixed inset-0 bg-pixel-pattern opacity-10"></div>
+      <div className="fixed inset-0 bg-scan-lines opacity-20"></div>
       
   <div
-    className={`relative z-10 max-w-6xl mx-auto flex flex-col h-full max-h-full w-full ${isMobileHorizontal ? 'px-0 py-1' : 'px-1 xs:px-2 sm:px-4 py-2 xs:py-3 sm:py-6'}`}
+    className={`relative z-10 max-w-6xl mx-auto flex flex-col w-full ${isMobileHorizontal ? 'px-0 py-1 pb-20' : 'px-1 xs:px-2 sm:px-4 py-2 xs:py-3 sm:py-6 pb-24'}`}
   >
         {/* Header */}
         <div className={isMobileHorizontal ? 'mb-3' : 'mb-6'}>
@@ -372,10 +372,7 @@ const Level2Screen3: React.FC = () => {
 
         {/* Main content area */}
         <div 
-          className={`pixel-border-thick bg-gray-800 relative overflow-hidden flex-1 min-h-0 max-h-full ${isMobileHorizontal ? 'p-1 mb-1' : 'p-6 mb-6'}`}
-          style={{ 
-            overflow: 'auto',
-          }}
+          className={`pixel-border-thick bg-gray-800 relative ${isMobileHorizontal ? 'p-1 mb-1' : 'p-6 mb-6'}`}
         >
           <div className="absolute inset-0 opacity-10">
             <div className="absolute inset-0" style={{
@@ -852,6 +849,11 @@ const Level2Screen3: React.FC = () => {
                           <h2 className={`pixel-text ${isMobileHorizontal ? 'text-xl' : 'text-4xl'} font-black text-white mb-1`} style={{ textShadow: '3px 3px 0px rgba(0,0,0,0.7), 0 0 20px rgba(100,116,139,0.3)' }}>
                             PROTOTYPE/DEMO/SKETCH
                           </h2>
+                          <div className="flex items-center justify-center space-x-2">
+                            <span className="pixel-text text-xs font-bold text-yellow-400 bg-yellow-900/30 px-2 py-1 rounded">
+                              OPTIONAL
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -994,48 +996,64 @@ const Level2Screen3: React.FC = () => {
         </div>
 
         {/* Fixed Bottom Navigation Bar */}
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-gray-900 via-gray-800/95 to-transparent p-4">
+        <div className={`fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-gray-900 via-gray-800/95 to-transparent ${isMobileHorizontal ? 'p-1' : 'p-4'}`}>
           <div className="max-w-6xl mx-auto">
-            <div className="pixel-border-thick bg-gray-900/90 p-4 relative overflow-hidden">
+            <div className={`pixel-border-thick bg-gray-900/90 relative overflow-hidden ${isMobileHorizontal ? 'p-2' : 'p-4'}`}>
               <div className="absolute inset-0 bg-pixel-pattern opacity-5"></div>
               <div className="absolute inset-0 bg-scan-lines opacity-10"></div>
               
-              <div className="relative z-10 flex items-center justify-between">
-                {/* Progress Info */}
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <div className={`w-4 h-4 transition-all duration-300 ${
-                      canProceed ? 'bg-green-400 animate-pulse' : 'bg-gray-600'
-                    } pixel-border`}></div>
-                    <div className="pixel-text text-sm font-bold">
-                      <span className={canProceed ? 'text-green-400' : 'text-gray-400'}>
-                        {canProceed ? "READY TO PROCEED" : "COMPLETE CURRENT STEP"}
-                      </span>
+              <div className={`relative z-10 flex items-center ${isMobileHorizontal ? 'justify-center' : 'justify-between'}`}>
+                {/* Progress Info - Hidden on mobile horizontal */}
+                {!isMobileHorizontal && (
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-4 h-4 transition-all duration-300 ${
+                        canProceed ? 'bg-green-400 animate-pulse' : 'bg-gray-600'
+                      } pixel-border`}></div>
+                      <div className="pixel-text text-sm font-bold">
+                        <span className={canProceed ? 'text-green-400' : 'text-gray-400'}>
+                          {canProceed ? "READY TO PROCEED" : "COMPLETE CURRENT STEP"}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="hidden sm:flex items-center space-x-2">
+                      <span className="pixel-text text-sm font-bold text-cyan-300">STAGE {stage}/9</span>
+                      <div className="w-20 h-2 bg-gray-700 pixel-border">
+                        <div 
+                          className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500"
+                          style={{ width: `${(stage / 9) * 100}%` }}
+                        ></div>
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="hidden sm:flex items-center space-x-2">
-                    <span className="pixel-text text-sm font-bold text-cyan-300">STAGE {stage}/9</span>
-                    <div className="w-20 h-2 bg-gray-700 pixel-border">
-                      <div 
-                        className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500"
-                        style={{ width: `${(stage / 9) * 100}%` }}
-                      ></div>
+                )}
+                
+                {/* Mobile horizontal compact status */}
+                {isMobileHorizontal && (
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-1">
+                      <div className={`w-2 h-2 transition-all duration-300 ${
+                        canProceed ? 'bg-green-400 animate-pulse' : 'bg-gray-600'
+                      } pixel-border`}></div>
+                      <span className="pixel-text text-xs font-bold text-cyan-300">{stage}/9</span>
                     </div>
                   </div>
-                </div>
+                )}
                 
                 {/* Proceed Button */}
                 <button
-                  className={`pixel-border-thick pixel-text flex items-center justify-center space-x-2 transition-all duration-300 font-black relative overflow-hidden group ${
-                    isMobileHorizontal ? 'px-6 py-3 text-sm' : 'px-8 py-4 text-lg'
+                  className={`pixel-border-thick pixel-text flex items-center justify-center transition-all duration-300 font-black relative overflow-hidden group ${
+                    isMobileHorizontal 
+                      ? 'px-4 py-2 text-xs space-x-1' 
+                      : 'px-8 py-4 text-lg space-x-2'
                   } ${
                     canProceed 
                       ? `bg-gradient-to-r ${currentStageData.color} hover:scale-105 shadow-lg` 
                       : 'bg-gray-700 cursor-not-allowed opacity-50'
                   }`}
                   style={{ 
-                    minWidth: isMobileHorizontal ? '140px' : '200px',
+                    minWidth: isMobileHorizontal ? '100px' : '200px',
                     boxShadow: canProceed ? `0 0 20px rgba(6,182,212,0.3)` : 'none'
                   }}
                   onClick={() => {
@@ -1050,16 +1068,16 @@ const Level2Screen3: React.FC = () => {
                     <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-white/5 animate-pulse opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   )}
                   
-                  <div className="relative z-10 flex items-center space-x-2">
+                  <div className={`relative z-10 flex items-center ${isMobileHorizontal ? 'space-x-1' : 'space-x-2'}`}>
                     {stage === 9 ? (
                       <>
-                        <CheckCircle className="w-5 h-5" />
-                        <span>COMPLETE</span>
+                        <CheckCircle className={`${isMobileHorizontal ? 'w-3 h-3' : 'w-5 h-5'}`} />
+                        <span>{isMobileHorizontal ? 'DONE' : 'COMPLETE'}</span>
                       </>
                     ) : (
                       <>
-                        <span>PROCEED</span>
-                        {canProceed && (
+                        <span>{isMobileHorizontal ? 'NEXT' : 'PROCEED'}</span>
+                        {canProceed && !isMobileHorizontal && (
                           <div className="flex space-x-1">
                             <div className="w-1 h-1 bg-current rounded-full animate-bounce"></div>
                             <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
