@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useDeviceLayout } from '../../hooks/useOrientation';
-import { ChevronLeft, ChevronRight, Lightbulb, Users, Zap, Target, Rocket, Globe, FileText, Sparkles, Upload, CheckCircle } from 'lucide-react';
+import { Lightbulb, Users, Zap, Target, Rocket, Globe, FileText, Sparkles, Upload, CheckCircle } from 'lucide-react';
 
 const Level2Screen3: React.FC = () => {
   const [stage, setStage] = useState(1);
+  const [showProceedWarning, setShowProceedWarning] = useState(false);
   const [problem, setProblem] = useState('');
   const [technology, setTechnology] = useState('');
   const [collaboration, setCollaboration] = useState('');
@@ -34,7 +35,7 @@ const Level2Screen3: React.FC = () => {
   ];
 
   const currentStageData = stages[stage - 1];
-  const progress = (stage / 9) * 100;
+
 
   const isStageComplete = (stageNum: number) => {
     switch(stageNum) {
@@ -114,36 +115,44 @@ const Level2Screen3: React.FC = () => {
               </div>
               <div>
                 <h1 className={`${isMobileHorizontal ? 'text-lg' : 'text-3xl'} font-black text-white`} style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.5)' }}>
-                  INNOVATION TEMPLATE
+                  INNOVATION ROUND
                 </h1>
-                <p className={`text-cyan-100 font-bold ${isMobileHorizontal ? 'text-xs' : ''}`}>TRANSFORM IDEAS INTO IMPACT</p>
+                <p className={`text-cyan-100 font-bold ${isMobileHorizontal ? 'text-xs' : ''}`}>QUESTION {stage} of 9</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Progress bar */}
-  <div className={isMobileHorizontal ? 'mb-2' : 'mb-6'}>
-          <div 
-            className={`bg-gray-800 ${isMobileHorizontal ? 'p-2' : 'p-4'}`}
-            style={{ border: '2px solid #374151' }}
-          >
-            <div className={`flex justify-between items-center ${isMobileHorizontal ? 'mb-1' : 'mb-2'}`}>
-              <span className={`${isMobileHorizontal ? 'text-xs' : 'text-sm'} font-black text-cyan-300`}>STEP {stage} OF 9</span>
-              <span className={`${isMobileHorizontal ? 'text-xs' : 'text-sm'} font-black text-cyan-300`}>{Math.round(progress)}% COMPLETE</span>
-            </div>
-            <div className={`w-full bg-gray-700 ${isMobileHorizontal ? 'h-2' : 'h-3'}`} style={{ border: '1px solid #4b5563' }}>
-              <div 
-                className={`h-full bg-gradient-to-r ${currentStageData.color} transition-all duration-500 ease-out`}
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
-          </div>
-        </div>
+
 
         {/* Stage indicators */}
-        <div className={`${isMobileHorizontal ? 'mb-2' : 'mb-6'} overflow-x-auto`}>
-          <div className={`flex ${isMobileHorizontal ? 'gap-1' : 'gap-2'} min-w-max pb-2`}>
+        <div
+          className={`overflow-x-auto`}
+          style={{
+            scrollbarWidth: 'thin', // Firefox
+            msOverflowStyle: 'auto', // IE/Edge
+          }}
+        >
+          <style>{`
+            /* Chrome, Edge, Safari */
+            .stage-indicator-scrollbar::-webkit-scrollbar {
+              height: 4px !important;
+              background: transparent !important;
+            }
+            .stage-indicator-scrollbar::-webkit-scrollbar-thumb {
+              background: linear-gradient(90deg, #06b6d4 0%, #2563eb 100%) !important;
+              border-radius: 2px !important;
+              box-shadow: 0 0 4px 0 #06b6d4 !important;
+              min-width: 24px !important;
+            }
+            .stage-indicator-scrollbar::-webkit-scrollbar-track {
+              background: linear-gradient(90deg, #0e172a 0%, #1e293b 100%) !important;
+            }
+            .stage-indicator-scrollbar::-webkit-scrollbar-corner {
+              background: #0e172a !important;
+            }
+          `}</style>
+          <div className={`stage-indicator-scrollbar flex ${isMobileHorizontal ? 'gap-1' : 'gap-2'} min-w-max pb-2`}>
             {stages.map((stageData, index) => {
               const stageNumber = index + 1;
               const isCurrent = stageNumber === stage;
@@ -190,7 +199,7 @@ const Level2Screen3: React.FC = () => {
 
         {/* Main content area */}
         <div 
-          className={`bg-gray-800 relative overflow-hidden flex-1 min-h-0 max-h-full ${isMobileHorizontal ? 'p-2 mb-2' : 'p-6 mb-6'}`}
+          className={`bg-gray-800 relative overflow-hidden flex-1 min-h-0 max-h-full ${isMobileHorizontal ? 'p-1 mb-1' : 'p-6 mb-6'}`}
           style={{ 
             border: '3px solid #374151',
             boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.1)',
@@ -209,16 +218,16 @@ const Level2Screen3: React.FC = () => {
             }}></div>
           </div>
           
-          <div className="relative z-10 min-h-[400px]">
+          <div className={`relative z-10 ${isMobileHorizontal ? 'space-y-2' : ''}`}>
             {stage === 1 && (
-              <div className="space-y-6">
-                <div className={`text-center ${isMobileHorizontal ? 'mb-2' : 'mb-6'}`}>
+              <div className={isMobileHorizontal ? 'space-y-2' : 'space-y-6'}>
+                <div className={`text-center ${isMobileHorizontal ? 'mb-1' : 'mb-6'}`}>
                   <h2 className={`${isMobileHorizontal ? 'text-lg' : 'text-3xl'} font-black text-white mb-2`} style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.5)' }}>
                     PROBLEM IDENTIFICATION
                   </h2>
                   <p className={`text-cyan-300 font-bold ${isMobileHorizontal ? 'text-xs' : 'text-lg'}`}>EVERY INNOVATION STARTS WITH A PROBLEM</p>
                 </div>
-                <div className="space-y-4">
+                <div className={isMobileHorizontal ? 'space-y-1' : 'space-y-4'}>
                   <div>
                     <label className={`block font-black text-cyan-300 mb-1 ${isMobileHorizontal ? 'text-sm' : 'text-lg'}`}>TARGET PROBLEM:</label>
                     <p className={`text-gray-300 font-bold ${isMobileHorizontal ? 'mb-1 text-xs' : 'mb-3'}`}>What issue are you addressing? Who faces this problem?</p>
@@ -238,14 +247,14 @@ const Level2Screen3: React.FC = () => {
             )}
 
             {stage === 2 && (
-              <div className="space-y-6">
-                <div className="text-center mb-6">
-                  <h2 className="text-3xl font-black text-white mb-2" style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.5)' }}>
+              <div className={isMobileHorizontal ? 'space-y-2' : 'space-y-6'}>
+                <div className={`text-center ${isMobileHorizontal ? 'mb-2' : 'mb-6'}`}>
+                  <h2 className={`${isMobileHorizontal ? 'text-lg' : 'text-3xl'} font-black text-white mb-2`} style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.5)' }}>
                     TECHNOLOGY INTEGRATION
                   </h2>
-                  <p className="text-cyan-300 text-lg font-bold">AMPLIFY YOUR SOLUTION WITH TECH</p>
+                  <p className={`text-cyan-300 font-bold ${isMobileHorizontal ? 'text-xs' : 'text-lg'}`}>AMPLIFY YOUR SOLUTION WITH TECH</p>
                 </div>
-                <div>
+                <div className={isMobileHorizontal ? 'space-y-1' : ''}>
                   <label className={`block font-black text-cyan-300 mb-1 ${isMobileHorizontal ? 'text-sm' : 'text-lg'}`}>TECH STACK:</label>
                   <p className={`text-gray-300 font-bold ${isMobileHorizontal ? 'mb-1 text-xs' : 'mb-3'}`}>What tools, apps, or digital aids will strengthen your solution?</p>
                   <input
@@ -264,14 +273,14 @@ const Level2Screen3: React.FC = () => {
             )}
 
             {stage === 3 && (
-              <div className="space-y-6">
-                <div className="text-center mb-6">
-                  <h2 className="text-3xl font-black text-white mb-2" style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.5)' }}>
+              <div className={isMobileHorizontal ? 'space-y-2' : 'space-y-6'}>
+                <div className={`text-center ${isMobileHorizontal ? 'mb-2' : 'mb-6'}`}>
+                  <h2 className={`${isMobileHorizontal ? 'text-lg' : 'text-3xl'} font-black text-white mb-2`} style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.5)' }}>
                     COLLABORATION NETWORK
                   </h2>
-                  <p className="text-cyan-300 text-lg font-bold">UNITE FORCES FOR MAXIMUM IMPACT</p>
+                  <p className={`text-cyan-300 font-bold ${isMobileHorizontal ? 'text-xs' : 'text-lg'}`}>UNITE FORCES FOR MAXIMUM IMPACT</p>
                 </div>
-                <div>
+                <div className={isMobileHorizontal ? 'space-y-1' : ''}>
                   <label className={`block font-black text-cyan-300 mb-1 ${isMobileHorizontal ? 'text-sm' : 'text-lg'}`}>ALLIANCE PARTNERS:</label>
                   <p className={`text-gray-300 font-bold ${isMobileHorizontal ? 'mb-1 text-xs' : 'mb-3'}`}>Who can you team up with to scale your idea?</p>
                   <input
@@ -290,14 +299,14 @@ const Level2Screen3: React.FC = () => {
             )}
 
             {stage === 4 && (
-              <div className="space-y-6">
-                <div className="text-center mb-6">
-                  <h2 className="text-3xl font-black text-white mb-2" style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.5)' }}>
+              <div className={isMobileHorizontal ? 'space-y-2' : 'space-y-6'}>
+                <div className={`text-center ${isMobileHorizontal ? 'mb-2' : 'mb-6'}`}>
+                  <h2 className={`${isMobileHorizontal ? 'text-lg' : 'text-3xl'} font-black text-white mb-2`} style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.5)' }}>
                     CREATIVE EDGE
                   </h2>
-                  <p className="text-cyan-300 text-lg font-bold">YOUR UNIQUE INNOVATION FACTOR</p>
+                  <p className={`text-cyan-300 font-bold ${isMobileHorizontal ? 'text-xs' : 'text-lg'}`}>YOUR UNIQUE INNOVATION FACTOR</p>
                 </div>
-                <div>
+                <div className={isMobileHorizontal ? 'space-y-1' : ''}>
                   <label className={`block font-black text-cyan-300 mb-1 ${isMobileHorizontal ? 'text-sm' : 'text-lg'}`}>DIFFERENTIATION:</label>
                   <p className={`text-gray-300 font-bold ${isMobileHorizontal ? 'mb-1 text-xs' : 'mb-3'}`}>What unique approach makes your idea stand out?</p>
                   <input
@@ -316,14 +325,14 @@ const Level2Screen3: React.FC = () => {
             )}
 
             {stage === 5 && (
-              <div className="space-y-6">
-                <div className="text-center mb-6">
-                  <h2 className="text-3xl font-black text-white mb-2" style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.5)' }}>
+              <div className={isMobileHorizontal ? 'space-y-2' : 'space-y-6'}>
+                <div className={`text-center ${isMobileHorizontal ? 'mb-2' : 'mb-6'}`}>
+                  <h2 className={`${isMobileHorizontal ? 'text-lg' : 'text-3xl'} font-black text-white mb-2`} style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.5)' }}>
                     RAPID DEPLOYMENT
                   </h2>
-                  <p className="text-cyan-300 text-lg font-bold">FROM PROTOTYPE TO GLOBAL SCALE</p>
+                  <p className={`text-cyan-300 font-bold ${isMobileHorizontal ? 'text-xs' : 'text-lg'}`}>FROM PROTOTYPE TO GLOBAL SCALE</p>
                 </div>
-                <div>
+                <div className={isMobileHorizontal ? 'space-y-1' : ''}>
                   <label className={`block font-black text-cyan-300 mb-1 ${isMobileHorizontal ? 'text-sm' : 'text-lg'}`}>SCALING STRATEGY:</label>
                   <p className={`text-gray-300 font-bold ${isMobileHorizontal ? 'mb-1 text-xs' : 'mb-3'}`}>How can you deploy quickly and scale globally?</p>
                   <input
@@ -342,14 +351,14 @@ const Level2Screen3: React.FC = () => {
             )}
 
             {stage === 6 && (
-              <div className="space-y-6">
-                <div className="text-center mb-6">
-                  <h2 className="text-3xl font-black text-white mb-2" style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.5)' }}>
+              <div className={isMobileHorizontal ? 'space-y-2' : 'space-y-6'}>
+                <div className={`text-center ${isMobileHorizontal ? 'mb-2' : 'mb-6'}`}>
+                  <h2 className={`${isMobileHorizontal ? 'text-lg' : 'text-3xl'} font-black text-white mb-2`} style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.5)' }}>
                     IMPACT ASSESSMENT
                   </h2>
-                  <p className="text-cyan-300 text-lg font-bold">MEASURE YOUR VALUE CREATION</p>
+                  <p className={`text-cyan-300 font-bold ${isMobileHorizontal ? 'text-xs' : 'text-lg'}`}>MEASURE YOUR VALUE CREATION</p>
                 </div>
-                <div>
+                <div className={isMobileHorizontal ? 'space-y-1' : ''}>
                   <label className={`block font-black text-cyan-300 mb-1 ${isMobileHorizontal ? 'text-sm' : 'text-lg'}`}>VALUE DELIVERY:</label>
                   <p className={`text-gray-300 font-bold ${isMobileHorizontal ? 'mb-1 text-xs' : 'mb-3'}`}>What meaningful change will your innovation create?</p>
                   <input
@@ -368,15 +377,15 @@ const Level2Screen3: React.FC = () => {
             )}
 
             {stage === 7 && (
-              <div className="space-y-6">
-                <div className="text-center mb-6">
-                  <h2 className="text-3xl font-black text-white mb-2" style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.5)' }}>
+              <div className={isMobileHorizontal ? 'space-y-2' : 'space-y-6'}>
+                <div className={`text-center ${isMobileHorizontal ? 'mb-2' : 'mb-6'}`}>
+                  <h2 className={`${isMobileHorizontal ? 'text-lg' : 'text-3xl'} font-black text-white mb-2`} style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.5)' }}>
                     MISSION STATEMENT
                   </h2>
-                  <p className="text-cyan-300 text-lg font-bold">YOUR COMPLETE INNOVATION PROFILE</p>
+                  <p className={`text-cyan-300 font-bold ${isMobileHorizontal ? 'text-xs' : 'text-lg'}`}>YOUR COMPLETE INNOVATION PROFILE</p>
                 </div>
                 <div 
-                  className="bg-gradient-to-r from-indigo-900 to-purple-900 p-6 relative overflow-hidden"
+                  className={`bg-gradient-to-r from-indigo-900 to-purple-900 relative overflow-hidden ${isMobileHorizontal ? 'p-2' : 'p-6'}`}
                   style={{ border: '2px solid #4338ca' }}
                 >
                   <div className="absolute inset-0 opacity-20">
@@ -421,15 +430,15 @@ const Level2Screen3: React.FC = () => {
             )}
 
             {stage === 8 && (
-              <div className="space-y-6">
-                <div className="text-center mb-6">
-                  <h2 className="text-3xl font-black text-white mb-2" style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.5)' }}>
+              <div className={isMobileHorizontal ? 'space-y-2' : 'space-y-6'}>
+                <div className={`text-center ${isMobileHorizontal ? 'mb-2' : 'mb-6'}`}>
+                  <h2 className={`${isMobileHorizontal ? 'text-lg' : 'text-3xl'} font-black text-white mb-2`} style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.5)' }}>
                     PROTOTYPE UPLOAD
                   </h2>
-                  <p className="text-cyan-300 text-lg font-bold">SUBMIT YOUR DEMO OR SKETCH</p>
+                  <p className={`text-cyan-300 font-bold ${isMobileHorizontal ? 'text-xs' : 'text-lg'}`}>SUBMIT YOUR DEMO OR SKETCH</p>
                 </div>
                 <div 
-                  className="border-2 border-dashed border-gray-600 p-8 text-center hover:border-gray-500 transition-colors duration-300 bg-gray-900/50"
+                  className={`border-2 border-dashed border-gray-600 text-center hover:border-gray-500 transition-colors duration-300 bg-gray-900/50 ${isMobileHorizontal ? 'p-2' : 'p-8'}`}
                 >
                   <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                   <label htmlFor="file-upload" className="cursor-pointer">
@@ -452,7 +461,7 @@ const Level2Screen3: React.FC = () => {
                   </label>
                   {file && (
                     <div 
-                      className="mt-4 p-4 bg-green-900/30 relative overflow-hidden"
+                      className={`mt-4 bg-green-900/30 relative overflow-hidden ${isMobileHorizontal ? 'p-2' : 'p-4'}`}
                       style={{ border: '2px solid #16a34a' }}
                     >
                       <div className="absolute inset-0 opacity-20">
@@ -478,14 +487,14 @@ const Level2Screen3: React.FC = () => {
             )}
 
             {stage === 9 && (
-              <div className="space-y-6">
-                <div className="text-center mb-6">
-                  <h2 className="text-3xl font-black text-white mb-2" style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.5)' }}>
+              <div className={isMobileHorizontal ? 'space-y-2' : 'space-y-6'}>
+                <div className={`text-center ${isMobileHorizontal ? 'mb-2' : 'mb-6'}`}>
+                  <h2 className={`${isMobileHorizontal ? 'text-lg' : 'text-3xl'} font-black text-white mb-2`} style={{ textShadow: '2px 2px 0px rgba(0,0,0,0.5)' }}>
                     MISSION DEBRIEF
                   </h2>
-                  <p className="text-cyan-300 text-lg font-bold">ANALYZE YOUR INNOVATION JOURNEY</p>
+                  <p className={`text-cyan-300 font-bold ${isMobileHorizontal ? 'text-xs' : 'text-lg'}`}>ANALYZE YOUR INNOVATION JOURNEY</p>
                 </div>
-                <div>
+                <div className={isMobileHorizontal ? 'space-y-1' : ''}>
                   <label className="block text-lg font-black text-cyan-300 mb-2">REFLECTION LOG:</label>
                   <p className="text-gray-300 mb-3 font-bold">What did you learn? What would you improve?</p>
                   <textarea
@@ -505,18 +514,8 @@ const Level2Screen3: React.FC = () => {
         </div>
 
         {/* Navigation */}
-  <div className={`flex justify-between items-center ${isMobileHorizontal ? 'gap-1' : ''}`}>
-          <button
-            className={`flex items-center bg-gray-700 hover:bg-gray-600 text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed font-black ${isMobileHorizontal ? 'gap-1 px-2 py-1 text-xs' : 'gap-1 xs:gap-2 px-3 xs:px-4 sm:px-6 py-2 xs:py-3 text-xs xs:text-sm sm:text-base'}`}
-            style={{ border: '2px solid #4b5563' }}
-            onClick={() => setStage(stage - 1)}
-            disabled={stage === 1}
-          >
-            <ChevronLeft className="w-5 h-5" />
-            PREVIOUS
-          </button>
-
-          <div className="text-center">
+        <div className={`flex flex-col items-center ${isMobileHorizontal ? 'gap-1' : ''}`}>
+          <div className="text-center mb-2">
             <div className="text-sm text-gray-400 mb-1 font-bold">
               {canProceed ? "READY TO PROCEED" : "COMPLETE CURRENT STEP"}
             </div>
@@ -524,22 +523,48 @@ const Level2Screen3: React.FC = () => {
               canProceed ? 'bg-green-400 animate-pulse' : 'bg-gray-600'
             }`} style={{ border: '1px solid #4b5563' }}></div>
           </div>
-
           <button
-            className={`flex items-center transition-all duration-300 font-black ${isMobileHorizontal ? 'gap-1 px-2 py-1 text-xs' : 'gap-1 xs:gap-2 px-3 xs:px-4 sm:px-6 py-2 xs:py-3 text-xs xs:text-sm sm:text-base'} ${
-              stage === 9 
-                ? 'bg-green-600 hover:bg-green-500' 
-                : canProceed 
-                  ? `bg-gradient-to-r ${currentStageData.color} hover:scale-105`
-                  : 'bg-gray-700 cursor-not-allowed opacity-50'
+            className={`flex items-center justify-center transition-all duration-300 font-black ${isMobileHorizontal ? 'px-4 py-2 text-xs' : 'px-8 py-3 text-base'} ${
+              canProceed 
+                ? `bg-gradient-to-r ${currentStageData.color} hover:scale-105` 
+                : 'bg-gray-700 cursor-not-allowed opacity-50'
             }`}
-            style={{ border: '2px solid #4b5563' }}
-            onClick={() => setStage(stage + 1)}
+            style={{ border: '2px solid #4b5563', minWidth: isMobileHorizontal ? '120px' : '200px' }}
+            onClick={() => {
+              if (canProceed && stage !== 9) {
+                setShowProceedWarning(true);
+              }
+            }}
             disabled={stage === 9 || !canProceed}
           >
-            {stage === 9 ? 'COMPLETE MISSION' : 'NEXT'}
-            <ChevronRight className="w-5 h-5" />
+            PROCEED
           </button>
+        {/* Proceed Warning Modal */}
+        {showProceedWarning && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+            <div className="bg-gray-900 rounded-lg shadow-lg p-6 max-w-xs w-full border-2 border-yellow-500 text-center">
+              <div className="text-yellow-400 font-black text-lg mb-2">Warning</div>
+              <div className="text-white text-sm mb-4 font-bold">Action cannot be undone. Are you sure you want to proceed?</div>
+              <div className="flex justify-center gap-4">
+                <button
+                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-black rounded"
+                  onClick={() => {
+                    setShowProceedWarning(false);
+                    setStage(stage + 1);
+                  }}
+                >
+                  Yes, Proceed
+                </button>
+                <button
+                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-black rounded"
+                  onClick={() => setShowProceedWarning(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         </div>
       </div>
     </div>
