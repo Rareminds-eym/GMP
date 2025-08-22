@@ -239,8 +239,8 @@ const Level2Screen3: React.FC = () => {
   return (
     <>
       <div
-        className={`min-h-screen bg-gray-800 relative flex flex-col compact-all${isMobileHorizontal ? ' compact-mobile-horizontal' : ''}`}
-        style={{ fontFamily: 'Verdana, Geneva, Tahoma, sans-serif', fontSize: isMobileHorizontal ? '12px' : '13px', lineHeight: 1.2, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
+        className={`h-screen bg-gray-800 relative flex flex-col compact-all${isMobileHorizontal ? ' compact-mobile-horizontal' : ''}`}
+        style={{ fontFamily: 'Verdana, Geneva, Tahoma, sans-serif', fontSize: isMobileHorizontal ? '12px' : '13px', lineHeight: 1.2, overflowY: 'auto', WebkitOverflowScrolling: 'touch', height: '100dvh' }}
       >
         {/* Background Pattern */}
         <div className="fixed inset-0 bg-pixel-pattern opacity-10"></div>
