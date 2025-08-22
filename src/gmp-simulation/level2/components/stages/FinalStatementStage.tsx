@@ -1,8 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FileText } from 'lucide-react';
 import { StageProps } from '../../types';
 
-const FinalStatementStage: React.FC<StageProps> = ({ formData, isMobileHorizontal }) => {
+const FinalStatementStage: React.FC<StageProps> = ({ onFormDataChange, isMobileHorizontal }) => {
+  // Local state for user-filled blanks
+  const [fields, setFields] = useState({
+    problem: '',
+    technology: '',
+    collaboration: '',
+    creativity: '',
+    speedScale: '',
+    impact: '',
+  });
+
+  const handleChange = (field: keyof typeof fields) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFields(prev => ({ ...prev, [field]: value }));
+    if (onFormDataChange) onFormDataChange(field, value);
+  };
+
   return (
     <div className={`${isMobileHorizontal ? 'space-y-3' : 'space-y-8'} animate-fadeIn`}>
       <div className={`text-center ${isMobileHorizontal ? 'mb-3' : 'mb-8'}`}>
@@ -44,29 +60,53 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, isMobileHorizonta
               </div>
               <div className="relative z-10 text-lg text-white leading-relaxed font-bold">
                 <span className="text-indigo-300 font-black">"Our innovation solves </span>
-                <span className="text-red-400 font-black bg-red-900/30 px-2 py-1">
-                  {formData.problem || '________'}
-                </span>
+                <input
+                  className="inline-block text-red-400 font-black bg-red-900/30 px-2 py-1 w-40 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-red-400"
+                  type="text"
+                  value={fields.problem}
+                  onChange={handleChange('problem')}
+                  placeholder="(problem)"
+                />
                 <span className="text-indigo-300 font-black"> by using </span>
-                <span className="text-blue-400 font-black bg-blue-900/30 px-2 py-1">
-                  ({formData.technology || 'technology'})
-                </span>
+                <input
+                  className="inline-block text-blue-400 font-black bg-blue-900/30 px-2 py-1 w-32 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  type="text"
+                  value={fields.technology}
+                  onChange={handleChange('technology')}
+                  placeholder="(technology)"
+                />
                 <span className="text-indigo-300 font-black">, built with </span>
-                <span className="text-green-400 font-black bg-green-900/30 px-2 py-1">
-                  ({formData.collaboration || 'collaboration'})
-                </span>
+                <input
+                  className="inline-block text-green-400 font-black bg-green-900/30 px-2 py-1 w-32 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-green-400"
+                  type="text"
+                  value={fields.collaboration}
+                  onChange={handleChange('collaboration')}
+                  placeholder="(collaboration)"
+                />
                 <span className="text-indigo-300 font-black">, adding </span>
-                <span className="text-purple-400 font-black bg-purple-900/30 px-2 py-1">
-                  ({formData.creativity || 'creative twist'})
-                </span>
+                <input
+                  className="inline-block text-purple-400 font-black bg-purple-900/30 px-2 py-1 w-32 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  type="text"
+                  value={fields.creativity}
+                  onChange={handleChange('creativity')}
+                  placeholder="(creative twist)"
+                />
                 <span className="text-indigo-300 font-black">. It can grow with </span>
-                <span className="text-orange-400 font-black bg-orange-900/30 px-2 py-1">
-                  ({formData.speedScale || 'speed & scale'})
-                </span>
+                <input
+                  className="inline-block text-orange-400 font-black bg-orange-900/30 px-2 py-1 w-32 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  type="text"
+                  value={fields.speedScale}
+                  onChange={handleChange('speedScale')}
+                  placeholder="(speed & scale)"
+                />
                 <span className="text-indigo-300 font-black"> and will create </span>
-                <span className="text-teal-400 font-black bg-teal-900/30 px-2 py-1">
-                  ({formData.impact || 'purpose/impact'})
-                </span>
+                <input
+                  className="inline-block text-teal-400 font-black bg-teal-900/30 px-2 py-1 w-32 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-teal-400"
+                  type="text"
+                  value={fields.impact}
+                  onChange={handleChange('impact')}
+                  placeholder="(purpose/impact)"
+                />
                 <span className="text-indigo-300 font-black">."</span>
               </div>
             </div>

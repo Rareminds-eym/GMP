@@ -160,9 +160,9 @@ const Level2Screen3: React.FC = () => {
       icon: Upload, 
       title: "Prototype", 
       subtitle: "Demonstrate",
-      color: "from-gray-500 to-slate-500", 
-      bgColor: "from-gray-900/20 to-slate-900/20",
-      accent: "gray",
+      color: "from-pink-500 to-yellow-500", 
+      bgColor: "from-pink-900/20 to-yellow-900/20",
+      accent: "pink",
       description: "Optional: Show your solution in action",
       caseNumber: 8
     },
