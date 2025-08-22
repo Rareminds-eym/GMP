@@ -5,6 +5,7 @@ import { Timer } from "./Timer";
 import { Play, Clock, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Level2Timer from "./Level2Timer";
+import { getLevel2Progress } from "./level2/level2ProgressHelpers";
 
 // Real eligibility check: only allow if user is in winners_list_level1
 import { supabase } from "../lib/supabase";
@@ -51,6 +52,31 @@ const Level2Simulation: React.FC = () => {
   const INITIAL_TIME = 10800;
   const [timerActive, setTimerActive] = useState(false);
   const [timerValue, setTimerValue] = useState(INITIAL_TIME);
+
+  // Restore progress on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user || !user.id) throw new Error('User not authenticated');
+        const progress = await getLevel2Progress(user.id);
+        console.log('[Level2Simulation] Restored progress from hl2_progress:', progress);
+        if (progress) {
+          // Resume from next incomplete screen
+          let nextScreen = 1;
+          if (Array.isArray(progress.completed_screens) && progress.completed_screens.length > 0) {
+            nextScreen = Math.max(...progress.completed_screens) + 1;
+          } else if (progress.current_screen) {
+            nextScreen = progress.current_screen;
+          }
+          setLevel2Screen(nextScreen);
+          if (typeof progress.timer === 'number') setTimerValue(progress.timer);
+        }
+      } catch (err) {
+        console.warn('[Level2Simulation] No progress found or error restoring:', err);
+      }
+    })();
+  }, []);
   useEffect(() => {
     console.log('[Level2Simulation][DEBUG] hideProgress state changed:', hideProgress);
   }, [hideProgress]);
