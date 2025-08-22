@@ -5,8 +5,9 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export interface TeamMember {
-  full_name?: string;
+  team_name: string; // fallback to email if name not available
   email: string;
+  full_name?: string;
 }
 
 
@@ -14,7 +15,7 @@ export async function getTeamMembersBySession(session_id: string): Promise<TeamM
   if (!session_id) return [];
   const { data, error } = await supabase
     .from('teams')
-    .select('full_name, email')
+    .select('team_name, email, full_name')
     .eq('session_id', session_id);
   if (error) {
     console.error('[getTeamMembersBySession] Error:', error);
