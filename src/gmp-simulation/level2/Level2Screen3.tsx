@@ -92,6 +92,70 @@ const Level2Screen3: React.FC = () => {
     setProgress(completed === 0 ? 0 : (completed / inputStages.length) * 100);
   }, [formData]);
 
+  // Fix for OPPO and other problematic Android devices
+  useEffect(() => {
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const isOPPO = /OPPO/i.test(navigator.userAgent) || /OppoR/i.test(navigator.userAgent);
+    const isProblematicDevice = isOPPO || /ColorOS/i.test(navigator.userAgent) || /OnePlus/i.test(navigator.userAgent);
+    
+    if (isAndroid || isProblematicDevice) {
+      // Force enable touch scrolling for problematic devices
+      const mainContainer = document.querySelector('[data-scroll-container]') || document.body;
+      
+      // Add CSS fixes directly to the DOM for maximum compatibility
+      const style = document.createElement('style');
+      style.textContent = `
+        * {
+          -webkit-overflow-scrolling: touch !important;
+          overscroll-behavior: contain;
+        }
+        
+        body, html {
+          overflow: auto !important;
+          height: 100% !important;
+          touch-action: pan-y !important;
+          -webkit-overflow-scrolling: touch !important;
+        }
+        
+        .compact-all {
+          overflow-y: auto !important;
+          -webkit-overflow-scrolling: touch !important;
+          transform: translateZ(0) !important;
+          will-change: scroll-position !important;
+          scroll-behavior: smooth !important;
+        }
+        
+        /* Prevent nested scrolling */
+        .compact-all .pixel-border-thick {
+          overflow: visible !important;
+        }
+        
+        .compact-all .relative.z-10 {
+          overflow: visible !important;
+        }
+      `;
+      document.head.appendChild(style);
+      
+      // Force reflow for OPPO devices
+      if (isProblematicDevice) {
+        setTimeout(() => {
+          const container = document.querySelector('.min-h-screen');
+          if (container && container instanceof HTMLElement) {
+            container.style.overflow = 'auto';
+            container.style.WebkitOverflowScrolling = 'touch';
+            container.style.transform = 'translate3d(0,0,0)';
+            // Force a reflow
+            container.offsetHeight;
+          }
+        }, 100);
+      }
+      
+      return () => {
+        document.head.removeChild(style);
+      };
+    }
+  }, []);
+
   const handleFormDataChange = (field: keyof StageFormData, value: string | File | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -239,9 +303,23 @@ const Level2Screen3: React.FC = () => {
   return (
     <>
       <div
-
         className={`min-h-screen bg-gray-800 relative flex flex-col compact-all${isMobileHorizontal ? ' compact-mobile-horizontal' : ''}`}
-        style={{ fontFamily: 'Verdana, Geneva, Tahoma, sans-serif', fontSize: isMobileHorizontal ? '12px' : '13px', lineHeight: 1.2 }}
+        style={{ 
+          fontFamily: 'Verdana, Geneva, Tahoma, sans-serif', 
+          fontSize: isMobileHorizontal ? '12px' : '13px', 
+          lineHeight: 1.2,
+          height: '100vh',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-y',
+          scrollBehavior: 'smooth',
+          // Additional fixes for OPPO and problematic Android devices
+          transform: 'translate3d(0,0,0)', // Force hardware acceleration
+          willChange: 'scroll-position',
+          // Ensure momentum scrolling works
+          msOverflowStyle: '-ms-autohiding-scrollbar'
+        }}
       >
         {/* Background Pattern */}
         <div className="fixed inset-0 bg-pixel-pattern opacity-10"></div>
