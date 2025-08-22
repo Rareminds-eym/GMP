@@ -43,18 +43,6 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
               </div>
             )}
             
-            {/* Mobile horizontal compact status */}
-            {isMobileHorizontal && (
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-1">
-                  <div className={`w-2 h-2 transition-all duration-300 ${
-                    canProceed ? 'bg-green-400 animate-pulse' : 'bg-gray-600'
-                  } pixel-border`}></div>
-                  <span className="pixel-text text-xs font-bold text-cyan-300">{stage}/9</span>
-                </div>
-              </div>
-            )}
-            
             {/* Proceed Button */}
             <button
               className={`pixel-border-thick pixel-text flex items-center justify-center transition-all duration-300 font-black relative overflow-hidden group ${
@@ -86,7 +74,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
                   </>
                 ) : (
                   <>
-                    <span>{isMobileHorizontal ? 'NEXT' : 'PROCEED'}</span>
+                    <span>{'PROCEED'}</span>
                     {canProceed && !isMobileHorizontal && (
                       <div className="flex space-x-1">
                         <div className="w-1 h-1 bg-current rounded-full animate-bounce"></div>

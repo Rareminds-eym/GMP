@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { hackathonData } from '../HackathonData';
 import { useAuth } from './../../contexts/AuthContext';
@@ -16,6 +17,7 @@ import BriefPopup from './components/BriefPopup';
 
 const Level2Screen3: React.FC = () => {
   const [selectedCase, setSelectedCase] = useState<{ email: string; case_id: number; updated_at: string, description?: string } | null>(null);
+  const navigate = useNavigate();
   const [showBrief, setShowBrief] = useState(false);
   const [loadingCase, setLoadingCase] = useState(true);
   const [caseError, setCaseError] = useState<string | null>(null);
@@ -311,8 +313,7 @@ const Level2Screen3: React.FC = () => {
           {/* Level Completion Popup */}
           <LevelCompletionPopup
             show={showCompletionPopup && stage === 9}
-            onClose={() => setShowCompletionPopup(false)}
-            onContinue={() => setShowCompletionPopup(false)}
+            onContinue={() => navigate('/modules')}
             message="Congratulations! You have completed all stages of Level 2."
           />
         </div>
