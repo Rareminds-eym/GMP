@@ -3,7 +3,8 @@ import { FileText } from 'lucide-react';
 import { HeaderProps } from '../types';
 import Timer from './Timer';
 
-const Header: React.FC<HeaderProps> = ({ currentStageData, isMobileHorizontal, selectedCase, onShowBrief, progress }) => {
+
+const Header: React.FC<HeaderProps> = ({ currentStageData, isMobileHorizontal, selectedCase, onShowBrief, progress, timerStopped = false }) => {
   return (
     <div className={isMobileHorizontal ? 'mb-3' : 'mb-6'}>
       {/* <div 
@@ -69,6 +70,8 @@ const Header: React.FC<HeaderProps> = ({ currentStageData, isMobileHorizontal, s
                 <svg className="w-2 h-2 text-gray-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l3 2" /></svg>
               </div>
               <Timer isMobileHorizontal={isMobileHorizontal} />
+            <div className={isMobileHorizontal ? 'mr-1' : 'mr-4'}>
+              <Timer isMobileHorizontal={isMobileHorizontal} stopped={timerStopped} />
             </div>
             {selectedCase && onShowBrief && (
               <button

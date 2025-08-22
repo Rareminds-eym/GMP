@@ -21,9 +21,10 @@ interface Level2CardProps {
 interface Level2CardExtraProps {
   screen: number;
   onAdvanceScreen: () => void;
+  timer: number;
 }
 
-const Level2Card: React.FC<Level2CardProps & Level2CardExtraProps> = ({ teamName, teamMembers, screen, onAdvanceScreen }) => {
+const Level2Card: React.FC<Level2CardProps & Level2CardExtraProps> = ({ teamName, teamMembers, screen, onAdvanceScreen, timer }) => {
   const [selectedCases, setSelectedCases] = useState<{ [email: string]: number }>({});
 
   const handleSelectCase = (email: string, caseId: number) => {
@@ -41,7 +42,7 @@ const Level2Card: React.FC<Level2CardProps & Level2CardExtraProps> = ({ teamName
       />
     );
   }
-  if (screen === 2) return <Level2Screen2 onProceedConfirmed={onAdvanceScreen} />;
+  if (screen === 2) return <Level2Screen2 onProceedConfirmed={onAdvanceScreen} timer={timer} />;
   if (screen === 3) return <Level2Screen3 />;
   if (screen === 4) return <Level2Screen4 />;
   return null;
