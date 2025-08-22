@@ -4,9 +4,10 @@ interface Level2TimerProps {
   initialTime: number;
   isActive: boolean;
   onTimeUp: () => void;
+  onTick?: (time: number) => void;
 }
 
-const Level2Timer: React.FC<Level2TimerProps> = ({ initialTime, isActive, onTimeUp }) => {
+const Level2Timer: React.FC<Level2TimerProps> = ({ initialTime, isActive, onTimeUp, onTick }) => {
   const [timeRemaining, setTimeRemaining] = useState(initialTime);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -14,6 +15,12 @@ const Level2Timer: React.FC<Level2TimerProps> = ({ initialTime, isActive, onTime
   useEffect(() => {
     setTimeRemaining(initialTime);
   }, [initialTime]);
+
+  useEffect(() => {
+    if (typeof onTick === 'function') {
+      onTick(timeRemaining);
+    }
+  }, [timeRemaining]);
 
   useEffect(() => {
     if (!isActive) {

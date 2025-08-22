@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { supabase } from "../../lib/supabase";
 import ConfirmModal from "./ui/ConfirmModal";
 import { CheckCircle, Search, Target, AlertTriangle } from "lucide-react";
 import {
@@ -20,6 +21,7 @@ import { Question } from "../HackathonData";
 interface Level2SolutionCardProps {
   question: Question;
   onProceedConfirmed?: () => void;
+  timer: number;
 }
 
 // Draggable Item Component (single solution)
@@ -81,7 +83,69 @@ const DroppableZone: React.FC<DroppableZoneProps> = ({ id, selectedItem, childre
 };
 
 
-const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onProceedConfirmed }) => {
+const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onProceedConfirmed, timer }) => {
+  // TODO: Replace with actual session_id, email, and module_number from context/auth
+  let session_id = window.sessionStorage.getItem('session_id') || "";
+  let email = window.sessionStorage.getItem('email') || "";
+
+  // If session_id or email missing, try to fetch from winners_list_l1
+  useEffect(() => {
+    async function fetchAndSetUserFromWinnersList() {
+      if (session_id && email) {
+        console.log('[DEBUG] On mount: session_id:', session_id, 'email:', email);
+        return;
+      }
+      // Try to get from winners_list_l1 using another identifier (e.g., localStorage, or prompt user)
+      // For demo, try to get by email prompt if not set
+      let userEmail = email;
+      if (!userEmail) {
+        userEmail = window.prompt('Enter your email to continue:') || "";
+      }
+      if (!userEmail) {
+        console.warn('[DEBUG] No email provided, cannot fetch user.');
+        return;
+      }
+      // Fetch from Supabase
+      const { data, error } = await supabase
+        .from('winners_list_l1')
+        .select('session_id,email')
+        .eq('email', userEmail)
+        .single();
+      if (error || !data) {
+        console.error('[DEBUG] Could not fetch user from winners_list_l1:', error?.message);
+        return;
+      }
+      if (data.session_id && data.email) {
+        window.sessionStorage.setItem('session_id', data.session_id);
+        window.sessionStorage.setItem('email', data.email);
+        session_id = data.session_id;
+        email = data.email;
+        console.log('[DEBUG] Set session_id and email from winners_list_l1:', session_id, email);
+        // Optionally, reload the page or re-render state
+        window.location.reload();
+      }
+    }
+    fetchAndSetUserFromWinnersList();
+  }, []);
+  const module_number = 6; // or get from props/context if dynamic
+  const question_index = 0; // always 0 for this table
+
+  // Fetch saved solution on mount
+  useEffect(() => {
+    const fetchSavedSolution = async () => {
+      if (!session_id || !email) return;
+      const { data, error } = await supabase
+        .from('selected_solution')
+        .select('solution')
+        .eq('session_id', session_id)
+        .eq('email', email)
+        .eq('module_number', module_number)
+        .single();
+      if (data && data.solution) setSelectedSolution(data.solution);
+    };
+    fetchSavedSolution();
+    // eslint-disable-next-line
+  }, [session_id, email, module_number]);
   const { isMobile, isHorizontal } = useDeviceLayout();
   const isMobileHorizontal = isMobile && isHorizontal;
   const [selectedSolution, setSelectedSolution] = useState("");
@@ -149,6 +213,49 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
     if (shuffledOptions.some(opt => opt === draggedData.text)) {
       setSelectedSolution(draggedData.text);
     }
+  };
+
+  // Save selected solution to Supabase
+  const saveSelectedSolution = async (solution: string) => {
+    console.log('[DEBUG] Attempting to save selected solution:', {
+      session_id,
+      email,
+      module_number,
+      question_index,
+      solution,
+      correctSolution: question.correctSolution
+    });
+    if (!session_id || !email) {
+      console.warn('[DEBUG] Missing session_id or email, aborting save.');
+      return;
+    }
+    const is_correct = solution === question.correctSolution;
+    const score = is_correct ? 40 : 0;
+    const { data, error } = await supabase
+      .from('selected_solution')
+      .upsert([
+        {
+          session_id,
+          email,
+          module_number,
+          question_index,
+          solution,
+          is_correct,
+          score,
+          timer: timer,
+        },
+      ], { onConflict: 'session_id,email,module_number' });
+    if (error) {
+      console.error('[DEBUG] Error saving selected solution:', error.message, error.details);
+    } else {
+      console.log('[DEBUG] Save successful. Supabase response:', data);
+    }
+  };
+
+  // Call save on confirm
+  const handleProceed = () => {
+    saveSelectedSolution(selectedSolution);
+    if (typeof onProceedConfirmed === 'function') onProceedConfirmed();
   };
 
   return (
@@ -294,7 +401,7 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
                         onClose={() => setShowConfirm(false)}
                         onConfirm={() => {
                           setShowConfirm(false);
-                          if (typeof onProceedConfirmed === 'function') onProceedConfirmed();
+                          handleProceed();
                         }}
                         confirmText="CONFIRM & PROCEED"
                         title="Proceed to Next Step?"

@@ -6,9 +6,10 @@ import Level2SolutionCard from "./Level2SolutionCard";
 
 interface Level2Screen2Props {
   onProceedConfirmed?: () => void;
+  timer: number;
 }
 
-const Level2Screen2: React.FC<Level2Screen2Props> = ({ onProceedConfirmed }) => {
+const Level2Screen2: React.FC<Level2Screen2Props> = ({ onProceedConfirmed, timer }) => {
   const [selectedCaseId, setSelectedCaseId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +66,7 @@ const Level2Screen2: React.FC<Level2Screen2Props> = ({ onProceedConfirmed }) => 
   if (!question) return <div className="p-6 text-red-400">Selected case not found.</div>;
 
   // Only render the card, which includes the scenario/case description
-  return <Level2SolutionCard question={question} onProceedConfirmed={onProceedConfirmed} />;
+  return <Level2SolutionCard question={question} onProceedConfirmed={onProceedConfirmed} timer={timer} />;
 };
 
 export default Level2Screen2;
