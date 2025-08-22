@@ -200,12 +200,12 @@ const Level2Screen3: React.FC = () => {
       case 7:
         // All final statement fields must be filled (use unique keys)
         return (
-          (formData.finalProblem?.length ?? 0) > 0 &&
-          (formData.finalTechnology?.length ?? 0) > 0 &&
-          (formData.finalCollaboration?.length ?? 0) > 0 &&
-          (formData.finalCreativity?.length ?? 0) > 0 &&
-          (formData.finalSpeedScale?.length ?? 0) > 0 &&
-          (formData.finalImpact?.length ?? 0) > 0
+          !!formData.finalProblem && formData.finalProblem.trim() !== '' &&
+          !!formData.finalTechnology && formData.finalTechnology.trim() !== '' &&
+          !!formData.finalCollaboration && formData.finalCollaboration.trim() !== '' &&
+          !!formData.finalCreativity && formData.finalCreativity.trim() !== '' &&
+          !!formData.finalSpeedScale && formData.finalSpeedScale.trim() !== '' &&
+          !!formData.finalImpact && formData.finalImpact.trim() !== ''
         );
       case 8: return true; // Prototype/Demo/Sketch is optional
       case 9: return formData.reflection.length > 0;

@@ -4,18 +4,9 @@ import { StageProps } from '../../types';
 
 const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMobileHorizontal }) => {
   // Map local field names to unique formData keys
-  const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Map to unique keys for final statement
-    const keyMap: Record<string, keyof typeof formData> = {
-      problem: 'finalProblem',
-      technology: 'finalTechnology',
-      collaboration: 'finalCollaboration',
-      creativity: 'finalCreativity',
-      speedScale: 'finalSpeedScale',
-      impact: 'finalImpact',
-    };
-    if (onFormDataChange) onFormDataChange(keyMap[field], value);
+    if (onFormDataChange) onFormDataChange(field, value);
   };
 
   return (
@@ -63,7 +54,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
                   className="inline-block text-red-400 font-black bg-red-900/30 px-2 py-1 w-40 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-red-400"
                   type="text"
                   value={formData.finalProblem ?? ''}
-                  onChange={handleChange('problem')}
+                  onChange={handleChange('finalProblem')}
                   placeholder="(problem)"
                 />
                 <span className="text-indigo-300 font-black"> by using </span>
@@ -71,7 +62,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
                   className="inline-block text-blue-400 font-black bg-blue-900/30 px-2 py-1 w-32 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
                   type="text"
                   value={formData.finalTechnology ?? ''}
-                  onChange={handleChange('technology')}
+                  onChange={handleChange('finalTechnology')}
                   placeholder="(technology)"
                 />
                 <span className="text-indigo-300 font-black">, built with </span>
@@ -79,7 +70,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
                   className="inline-block text-green-400 font-black bg-green-900/30 px-2 py-1 w-32 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-green-400"
                   type="text"
                   value={formData.finalCollaboration ?? ''}
-                  onChange={handleChange('collaboration')}
+                  onChange={handleChange('finalCollaboration')}
                   placeholder="(collaboration)"
                 />
                 <span className="text-indigo-300 font-black">, adding </span>
@@ -87,7 +78,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
                   className="inline-block text-purple-400 font-black bg-purple-900/30 px-2 py-1 w-32 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
                   type="text"
                   value={formData.finalCreativity ?? ''}
-                  onChange={handleChange('creativity')}
+                  onChange={handleChange('finalCreativity')}
                   placeholder="(creative twist)"
                 />
                 <span className="text-indigo-300 font-black">. It can grow with </span>
@@ -95,7 +86,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
                   className="inline-block text-orange-400 font-black bg-orange-900/30 px-2 py-1 w-32 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-orange-400"
                   type="text"
                   value={formData.finalSpeedScale ?? ''}
-                  onChange={handleChange('speedScale')}
+                  onChange={handleChange('finalSpeedScale')}
                   placeholder="(speed & scale)"
                 />
                 <span className="text-indigo-300 font-black"> and will create </span>
@@ -103,7 +94,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
                   className="inline-block text-teal-400 font-black bg-teal-900/30 px-2 py-1 w-32 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-teal-400"
                   type="text"
                   value={formData.finalImpact ?? ''}
-                  onChange={handleChange('impact')}
+                  onChange={handleChange('finalImpact')}
                   placeholder="(purpose/impact)"
                 />
                 <span className="text-indigo-300 font-black">."</span>
