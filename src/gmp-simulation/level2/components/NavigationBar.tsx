@@ -71,7 +71,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
                 boxShadow: canProceed ? `0 0 20px rgba(6,182,212,0.3)` : 'none'
               }}
               onClick={onProceed}
-              disabled={stage === 9 || !canProceed}
+              disabled={!canProceed}
             >
               {/* Animated Background */}
               {canProceed && (

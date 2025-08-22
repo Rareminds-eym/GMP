@@ -216,7 +216,7 @@ const Level2Screen3: React.FC = () => {
   const canProceed = isStageComplete(stage);
 
   const handleProceed = () => {
-    if (canProceed && stage !== 9) {
+    if (canProceed) {
       setShowProceedWarning(true);
     }
   };
@@ -224,9 +224,11 @@ const Level2Screen3: React.FC = () => {
   const handleConfirmProceed = () => {
     setShowProceedWarning(false);
     if (stage === 8) {
-      // Next is stage 9 (final), so show completion popup after advancing
+      // Just advance to stage 9, do not show completion popup yet
       setStage(stage + 1);
-      setTimeout(() => setShowCompletionPopup(true), 400);
+    } else if (stage === 9) {
+      // User is completing the last stage, show completion popup
+      setShowCompletionPopup(true);
     } else {
       setStage(stage + 1);
     }
