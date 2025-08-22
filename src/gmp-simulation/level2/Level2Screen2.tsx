@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { hackathonData } from "../HackathonData";
 import Level2SolutionCard from "./Level2SolutionCard";
+import { restoreHL2Progress, saveHL2Progress } from "./level2Services";
 
 
 interface Level2Screen2Props {
@@ -9,20 +10,28 @@ interface Level2Screen2Props {
   timer: number;
 }
 
+
 const Level2Screen2: React.FC<Level2Screen2Props> = ({ onProceedConfirmed, timer }) => {
   const [selectedCaseId, setSelectedCaseId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [restoredTimer, setRestoredTimer] = useState<number>(timer);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
-    const fetchSelectedCase = async () => {
+    const fetchProgressAndCase = async () => {
       setLoading(true);
       setError(null);
-      const start = Date.now();
       try {
         const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError || !user || !user.email) throw new Error("User not authenticated");
+        if (authError || !user || !user.id) throw new Error("User not authenticated");
+        // Restore progress
+        const progress = await restoreHL2Progress(user.id);
+        console.log('[Level2Screen2] Restored progress:', progress);
+        if (progress) {
+          setRestoredTimer(progress.timer);
+        }
+        // Fetch selected case as before
         const { data, error } = await supabase
           .from("selected_cases")
           .select("case_id")
@@ -37,18 +46,34 @@ const Level2Screen2: React.FC<Level2Screen2Props> = ({ onProceedConfirmed, timer
       } catch (err: any) {
         setError(err.message || "Failed to fetch selected case");
       } finally {
-        const elapsed = Date.now() - start;
-        const minDelay = 4000;
-        if (elapsed < minDelay) {
-          timeoutId = setTimeout(() => setLoading(false), minDelay - elapsed);
-        } else {
-          setLoading(false);
-        }
+        timeoutId = setTimeout(() => setLoading(false), 500);
       }
     };
-    fetchSelectedCase();
+    fetchProgressAndCase();
     return () => { if (timeoutId) clearTimeout(timeoutId); };
   }, []);
+
+  // Example: Save progress when proceeding (call this in your navigation logic)
+  const handleProceed = async () => {
+    setLoading(true);
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user || !user.id) throw new Error("User not authenticated");
+      const progressToSave = {
+        user_id: user.id,
+        current_screen: 2,
+        completed_screens: [2], // Add logic to merge with previous completed screens
+        timer: restoredTimer,
+      };
+      console.log('[Level2Screen2] Saving progress:', progressToSave);
+      await saveHL2Progress(progressToSave);
+      if (onProceedConfirmed) onProceedConfirmed();
+    } catch (err) {
+      setError("Failed to save progress");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) return (
     <div className="min-h-[300px] flex flex-col items-center justify-center bg-gray-800 rounded-lg p-8 animate-fadeIn">
@@ -66,7 +91,13 @@ const Level2Screen2: React.FC<Level2Screen2Props> = ({ onProceedConfirmed, timer
   if (!question) return <div className="p-6 text-red-400">Selected case not found.</div>;
 
   // Only render the card, which includes the scenario/case description
-  return <Level2SolutionCard question={question} onProceedConfirmed={onProceedConfirmed} timer={timer} />;
+  return (
+    <div>
+      <Level2SolutionCard question={question} onProceedConfirmed={handleProceed} timer={restoredTimer} />
+      {/* You can add a button to manually trigger save for demo/testing */}
+      {/* <button onClick={handleProceed}>Save Progress & Continue</button> */}
+    </div>
+  );
 };
 
 export default Level2Screen2;

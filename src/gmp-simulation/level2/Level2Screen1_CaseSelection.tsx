@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useDeviceLayout } from '../../hooks/useOrientation';
 import { saveSelectedCase } from './supabaseHelpers';
+import { saveLevel2Progress, getLevel2Progress } from './level2ProgressHelpers';
 import { supabase } from '../../lib/supabase';
 import { fetchLevel1CasesForTeam, AttemptDetail } from './fetchLevel1Cases';
 import { hackathonData } from '../HackathonData';
@@ -44,17 +45,29 @@ const Level2Screen1_CaseSelection: React.FC<Level2Screen1Props> = ({
   useEffect(() => {
     setLoading(true);
     console.log('[Level2Screen1_CaseSelection] Fetching Level 1 cases for teamMembers:', teamMembers);
-    fetchLevel1CasesForTeam(teamMembers)
-      .then((result) => {
-        console.log('[Level2Screen1_CaseSelection] fetchLevel1CasesForTeam result:', result);
-        setAllCases(result);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error('[Level2Screen1_CaseSelection] Failed to load cases:', err);
-        setError('Failed to load cases.');
-        setLoading(false);
-      });
+    // Restore progress for this user
+    (async () => {
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user || !user.id) throw new Error('User not authenticated');
+        const progress = await getLevel2Progress(user.id);
+        console.log('[Level2Screen1] Restored progress:', progress);
+        // You can use progress.current_screen, progress.completed_screens, progress.timer as needed
+      } catch (err) {
+        console.warn('[Level2Screen1] No progress found or error restoring:', err);
+      }
+      fetchLevel1CasesForTeam(teamMembers)
+        .then((result) => {
+          console.log('[Level2Screen1_CaseSelection] fetchLevel1CasesForTeam result:', result);
+          setAllCases(result);
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error('[Level2Screen1_CaseSelection] Failed to load cases:', err);
+          setError('Failed to load cases.');
+          setLoading(false);
+        });
+    })();
   }, [teamMembers]);
 
   useEffect(() => {
@@ -268,12 +281,27 @@ const Level2Screen1_CaseSelection: React.FC<Level2Screen1Props> = ({
           <ConfirmModal
             open={confirmModal.open}
             onClose={() => setConfirmModal({ open: false, email: null, caseId: null })}
-            onConfirm={() => {
+            onConfirm={async () => {
               if (confirmModal.email && confirmModal.caseId !== null) {
                 onSelectCase(confirmModal.email, confirmModal.caseId);
                 // Always pass hackathon_id, not attempt.id
                 const hackathonId = (modalCase?.attempt as any)?.hackathon_id ?? (typeof modalCase?.attempt?.question === 'object' ? modalCase.attempt.question.id : confirmModal.caseId);
-                handleSaveSelectedCase(confirmModal.email, hackathonId);
+                await handleSaveSelectedCase(confirmModal.email, hackathonId);
+                // Save HL2 progress for screen 1
+                try {
+                  const { data: { user }, error: authError } = await supabase.auth.getUser();
+                  if (authError || !user || !user.id) throw new Error('User not authenticated');
+                  const progressToSave = {
+                    user_id: user.id,
+                    current_screen: 1,
+                    completed_screens: [1],
+                    timer: 0, // Set actual timer value if available
+                  };
+                  console.log('[Level2Screen1] Saving progress:', progressToSave);
+                  await saveLevel2Progress(progressToSave);
+                } catch (err) {
+                  console.error('[Level2Screen1] Failed to save progress:', err);
+                }
                 setConfirmModal({ open: false, email: null, caseId: null });
                 onContinue();
                 return;
