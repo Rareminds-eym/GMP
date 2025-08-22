@@ -18,6 +18,12 @@ export interface StageFormData {
   impact: string;
   reflection: string;
   file: File | null;
+  finalProblem?: string;
+  finalTechnology?: string;
+  finalCollaboration?: string;
+  finalCreativity?: string;
+  finalSpeedScale?: string;
+  finalImpact?: string;
 }
 
 export interface HeaderProps {

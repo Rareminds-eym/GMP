@@ -1,22 +1,21 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { FileText } from 'lucide-react';
 import { StageProps } from '../../types';
 
-const FinalStatementStage: React.FC<StageProps> = ({ onFormDataChange, isMobileHorizontal }) => {
-  // Local state for user-filled blanks
-  const [fields, setFields] = useState({
-    problem: '',
-    technology: '',
-    collaboration: '',
-    creativity: '',
-    speedScale: '',
-    impact: '',
-  });
-
-  const handleChange = (field: keyof typeof fields) => (e: React.ChangeEvent<HTMLInputElement>) => {
+const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMobileHorizontal }) => {
+  // Map local field names to unique formData keys
+  const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setFields(prev => ({ ...prev, [field]: value }));
-    if (onFormDataChange) onFormDataChange(field, value);
+    // Map to unique keys for final statement
+    const keyMap: Record<string, keyof typeof formData> = {
+      problem: 'finalProblem',
+      technology: 'finalTechnology',
+      collaboration: 'finalCollaboration',
+      creativity: 'finalCreativity',
+      speedScale: 'finalSpeedScale',
+      impact: 'finalImpact',
+    };
+    if (onFormDataChange) onFormDataChange(keyMap[field], value);
   };
 
   return (
@@ -63,7 +62,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ onFormDataChange, isMobileH
                 <input
                   className="inline-block text-red-400 font-black bg-red-900/30 px-2 py-1 w-40 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-red-400"
                   type="text"
-                  value={fields.problem}
+                  value={formData.finalProblem ?? ''}
                   onChange={handleChange('problem')}
                   placeholder="(problem)"
                 />
@@ -71,7 +70,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ onFormDataChange, isMobileH
                 <input
                   className="inline-block text-blue-400 font-black bg-blue-900/30 px-2 py-1 w-32 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
                   type="text"
-                  value={fields.technology}
+                  value={formData.finalTechnology ?? ''}
                   onChange={handleChange('technology')}
                   placeholder="(technology)"
                 />
@@ -79,7 +78,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ onFormDataChange, isMobileH
                 <input
                   className="inline-block text-green-400 font-black bg-green-900/30 px-2 py-1 w-32 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-green-400"
                   type="text"
-                  value={fields.collaboration}
+                  value={formData.finalCollaboration ?? ''}
                   onChange={handleChange('collaboration')}
                   placeholder="(collaboration)"
                 />
@@ -87,7 +86,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ onFormDataChange, isMobileH
                 <input
                   className="inline-block text-purple-400 font-black bg-purple-900/30 px-2 py-1 w-32 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
                   type="text"
-                  value={fields.creativity}
+                  value={formData.finalCreativity ?? ''}
                   onChange={handleChange('creativity')}
                   placeholder="(creative twist)"
                 />
@@ -95,7 +94,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ onFormDataChange, isMobileH
                 <input
                   className="inline-block text-orange-400 font-black bg-orange-900/30 px-2 py-1 w-32 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-orange-400"
                   type="text"
-                  value={fields.speedScale}
+                  value={formData.finalSpeedScale ?? ''}
                   onChange={handleChange('speedScale')}
                   placeholder="(speed & scale)"
                 />
@@ -103,7 +102,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ onFormDataChange, isMobileH
                 <input
                   className="inline-block text-teal-400 font-black bg-teal-900/30 px-2 py-1 w-32 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-teal-400"
                   type="text"
-                  value={fields.impact}
+                  value={formData.finalImpact ?? ''}
                   onChange={handleChange('impact')}
                   placeholder="(purpose/impact)"
                 />

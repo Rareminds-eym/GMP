@@ -11,6 +11,8 @@ import ProgressTrack from './components/ProgressTrack';
 import StageContent from './components/StageContent';
 import NavigationBar from './components/NavigationBar';
 import ConfirmationModal from './components/ConfirmationModal';
+import LevelCompletionPopup from './components/LevelCompletionPopup';
+import BriefPopup from './components/BriefPopup';
 
 const Level2Screen3: React.FC = () => {
   const [selectedCase, setSelectedCase] = useState<{ email: string; case_id: number; updated_at: string, description?: string } | null>(null);
@@ -56,15 +58,22 @@ const Level2Screen3: React.FC = () => {
   const [stage, setStage] = useState(1);
   const [showProceedWarning, setShowProceedWarning] = useState(false);
   const [formData, setFormData] = useState<StageFormData>({
-  problem: '', 
+    problem: '',
     technology: '',
     collaboration: '',
     creativity: '',
     speedScale: '',
     impact: '',
     reflection: '',
-    file: null
+    file: null,
+    finalProblem: '',
+    finalTechnology: '',
+    finalCollaboration: '',
+    finalCreativity: '',
+    finalSpeedScale: '',
+    finalImpact: '',
   });
+  const [showCompletionPopup, setShowCompletionPopup] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [progress, setProgress] = useState(0);
   const { isMobile, isHorizontal } = useDeviceLayout();
@@ -188,7 +197,16 @@ const Level2Screen3: React.FC = () => {
       case 4: return formData.creativity.length > 0;
       case 5: return formData.speedScale.length > 0;
       case 6: return formData.impact.length > 0;
-      case 7: return true; // Final statement is always complete
+      case 7:
+        // All final statement fields must be filled (use unique keys)
+        return (
+          (formData.finalProblem?.length ?? 0) > 0 &&
+          (formData.finalTechnology?.length ?? 0) > 0 &&
+          (formData.finalCollaboration?.length ?? 0) > 0 &&
+          (formData.finalCreativity?.length ?? 0) > 0 &&
+          (formData.finalSpeedScale?.length ?? 0) > 0 &&
+          (formData.finalImpact?.length ?? 0) > 0
+        );
       case 8: return true; // Prototype/Demo/Sketch is optional
       case 9: return formData.reflection.length > 0;
       default: return false;
@@ -205,128 +223,99 @@ const Level2Screen3: React.FC = () => {
 
   const handleConfirmProceed = () => {
     setShowProceedWarning(false);
-    setStage(stage + 1);
+    if (stage === 8) {
+      // Next is stage 9 (final), so show completion popup after advancing
+      setStage(stage + 1);
+      setTimeout(() => setShowCompletionPopup(true), 400);
+    } else {
+      setStage(stage + 1);
+    }
   };
 
   return (
-    <div
-      className={`min-h-screen bg-gray-800 relative flex flex-col compact-all${isMobileHorizontal ? ' compact-mobile-horizontal' : ''}`}
-      style={{ fontFamily: 'Verdana, Geneva, Tahoma, sans-serif', fontSize: isMobileHorizontal ? '12px' : '13px', lineHeight: 1.2, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
-    >
-      {/* Background Pattern */}
-      <div className="fixed inset-0 bg-pixel-pattern opacity-10"></div>
-      <div className="fixed inset-0 bg-scan-lines opacity-20"></div>
-      
+    <>
       <div
-        className={`relative z-10 max-w-6xl mx-auto flex flex-col w-full ${isMobileHorizontal ? 'px-0 py-1 pb-5' : 'px-1 xs:px-2 sm:px-4 py-2 xs:py-3 sm:py-6 pb-5'}`}
+        className={`min-h-screen bg-gray-800 relative flex flex-col compact-all${isMobileHorizontal ? ' compact-mobile-horizontal' : ''}`}
+        style={{ fontFamily: 'Verdana, Geneva, Tahoma, sans-serif', fontSize: isMobileHorizontal ? '12px' : '13px', lineHeight: 1.2, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
       >
-        {/* Header */}
-        <Header 
-          currentStageData={currentStageData}
-          isMobileHorizontal={isMobileHorizontal}
-          selectedCase={selectedCase}
-          onShowBrief={() => setShowBrief(true)}
-        />
-        {/* Loading/Error for Brief Button */}
-        {loadingCase && (
-          <div className="text-xs text-cyan-300 mt-2">Loading previously selected case...</div>
-        )}
-        {caseError && (
-          <div className="text-xs text-red-400 mt-2">Error loading case: {caseError} (showing fallback)</div>
-        )}
-      {/* Brief Popup */}
-      {showBrief && selectedCase && (
+        {/* Background Pattern */}
+        <div className="fixed inset-0 bg-pixel-pattern opacity-10"></div>
+        <div className="fixed inset-0 bg-scan-lines opacity-20"></div>
         <div
-          className={`fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-2 sm:p-4 font-[Verdana,Arial,sans-serif]`}
-          onClick={e => { if (e.target === e.currentTarget) setShowBrief(false); }}
+          className={`relative z-10 max-w-6xl mx-auto flex flex-col w-full ${isMobileHorizontal ? 'px-0 py-1 pb-5' : 'px-1 xs:px-2 sm:px-4 py-2 xs:py-3 sm:py-6 pb-5'}`}
         >
-          <div
-            className={
-              `pixel-border-thick bg-blue-100 w-full ` +
-              `max-w-2xl min-h-[180px] max-h-[90vh] text-center relative overflow-hidden animate-slideIn ` +
-              `flex flex-col justify-between ` +
-              (isMobileHorizontal
-                ? 'p-3 max-w-sm min-h-[170px] max-h-[75vh] text-sm'
-                : 'p-4 sm:p-8')
-            }
-            style={isMobileHorizontal ? { fontSize: '15px', borderRadius: 12 } : {}}
-          >
-            {/* Background Pattern */}
-            <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
-            <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
-            {/* Close Button */}
-            <button
-              onClick={() => setShowBrief(false)}
-              className={`absolute top-2 right-2 z-20 bg-blue-200 hover:bg-blue-300 text-blue-900 rounded-full shadow pixel-border flex items-center justify-center ${isMobileHorizontal ? 'w-7 h-7 p-0' : 'p-1'}`}
-              aria-label="Close case modal"
-              style={isMobileHorizontal ? { minWidth: 0, minHeight: 0, width: '1.75rem', height: '1.75rem' } : {}}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className={isMobileHorizontal ? "h-5 w-5 mx-auto my-auto" : "h-5 w-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-            {/* Content */}
-            <div className="relative z-10 flex flex-col h-full justify-between">
-              {/* Heading */}
-              <div className={`flex items-center justify-center space-x-2 mb-4 ${isMobileHorizontal ? 'mb-3' : ''}`}>
-                <div className={`bg-blue-400 pixel-border flex items-center justify-center ${isMobileHorizontal ? 'w-8 h-8' : 'w-8 h-8'} animate-bounce relative`}>
-                  <span className={`absolute inline-flex h-full w-full rounded-full bg-blue-300 opacity-60 animate-ping`}></span>
-                  <svg className={`text-blue-900 ${isMobileHorizontal ? 'w-6 h-6' : 'w-5 h-5'} relative z-10`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-3-3v6m9 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                </div>
-                <h2 className={`font-black text-blue-900 pixel-text ${isMobileHorizontal ? 'text-lg' : 'text-lg'}`}>
-                  Selected Question
-                </h2>
-              </div>
-              {/* Scrollable Question Area */}
-              <div className={`flex-1 overflow-y-auto mb-4 ${isMobileHorizontal ? 'max-h-48' : 'max-h-56'}`}>
-                <span className={`font-bold text-blue-900 pixel-text whitespace-pre-line ${isMobileHorizontal ? 'text-base' : 'text-base'}`}>
-                  {selectedCase.description || 'No description available for this question.'}
-                </span>
-              </div>
-              {/* Buttons Row (none for brief popup) */}
-            </div>
-          </div>
-        </div>
-      )}
+          {/* Header */}
+          <Header 
+            currentStageData={currentStageData}
+            isMobileHorizontal={isMobileHorizontal}
+            selectedCase={selectedCase}
+            onShowBrief={() => setShowBrief(true)}
+          />
+          {/* Loading/Error for Brief Button */}
+          {loadingCase && (
+            <div className="text-xs text-cyan-300 mt-2">Loading previously selected case...</div>
+          )}
+          {caseError && (
+            <div className="text-xs text-red-400 mt-2">Error loading case: {caseError} (showing fallback)</div>
+          )}
 
-        {/* Progress Track */}
-        {!isMobileHorizontal && (
-          <ProgressTrack 
-            stages={stages}
-            currentStage={stage}
-            isStageComplete={isStageComplete}
-            onStageClick={setStage}
-            progress={progress}
+          {/* Progress Track */}
+          {!isMobileHorizontal && (
+            <ProgressTrack 
+              stages={stages}
+              currentStage={stage}
+              isStageComplete={isStageComplete}
+              onStageClick={setStage}
+              progress={progress}
+              isMobileHorizontal={isMobileHorizontal}
+              isAnimating={isAnimating}
+              setIsAnimating={setIsAnimating}
+            />
+          )}
+
+          {/* Stage Content */}
+          <StageContent 
+            stage={stage}
+            formData={formData}
+            onFormDataChange={handleFormDataChange}
             isMobileHorizontal={isMobileHorizontal}
             isAnimating={isAnimating}
-            setIsAnimating={setIsAnimating}
           />
-        )}
 
-        {/* Stage Content */}
-        <StageContent 
-          stage={stage}
-          formData={formData}
-          onFormDataChange={handleFormDataChange}
-          isMobileHorizontal={isMobileHorizontal}
-          isAnimating={isAnimating}
-        />
+          {/* Navigation Bar */}
+          <NavigationBar 
+            stage={stage}
+            canProceed={canProceed}
+            currentStageData={currentStageData}
+            isMobileHorizontal={isMobileHorizontal}
+            onProceed={handleProceed}
+          />
 
-        {/* Navigation Bar */}
-        <NavigationBar 
-          stage={stage}
-          canProceed={canProceed}
-          currentStageData={currentStageData}
-          isMobileHorizontal={isMobileHorizontal}
-          onProceed={handleProceed}
-        />
+          {/* Brief Popup as component */}
+          <BriefPopup
+            show={showBrief && !!selectedCase}
+            description={selectedCase?.description}
+            isMobileHorizontal={isMobileHorizontal}
+            onClose={() => setShowBrief(false)}
+          />
+
+          {/* Confirmation Modal */}
+          <ConfirmationModal 
+            show={showProceedWarning}
+            onClose={() => setShowProceedWarning(false)}
+            onConfirm={handleConfirmProceed}
+          />
+
+          {/* Level Completion Popup */}
+          <LevelCompletionPopup
+            show={showCompletionPopup && stage === 9}
+            onClose={() => setShowCompletionPopup(false)}
+            onContinue={() => setShowCompletionPopup(false)}
+            message="Congratulations! You have completed all stages of Level 2."
+          />
+        </div>
       </div>
-
-      {/* Confirmation Modal */}
-      <ConfirmationModal 
-        show={showProceedWarning}
-        onClose={() => setShowProceedWarning(false)}
-        onConfirm={handleConfirmProceed}
-      />
-    </div>
+    </>
   );
 };
 
