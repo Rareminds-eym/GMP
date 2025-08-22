@@ -6,6 +6,7 @@ export interface StageData {
   bgColor: string;
   accent: string;
   description: string;
+  caseNumber: number;
 }
 
 export interface StageFormData {
@@ -23,6 +24,8 @@ export interface HeaderProps {
   currentStageData: StageData;
   progress: number;
   isMobileHorizontal: boolean;
+  selectedCase?: { email: string; case_id: number; updated_at: string } | null;
+  onShowBrief?: () => void;
 }
 
 export interface ProgressTrackProps {

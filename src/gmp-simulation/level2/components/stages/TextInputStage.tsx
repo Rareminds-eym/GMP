@@ -27,18 +27,18 @@ const TextInputStage: React.FC<TextInputStageProps> = ({
   shadowColor
 }) => {
   return (
-    <div className={`${isMobileHorizontal ? 'space-y-3' : 'space-y-8'} animate-fadeIn`}>
-      <div className={`text-center ${isMobileHorizontal ? 'mb-3' : 'mb-8'}`}>
-        <div className={`pixel-border-thick bg-gradient-to-br ${bgColor} p-6 relative overflow-hidden`}>
+    <div className={`${isMobileHorizontal ? 'space-y-0.5' : 'space-y-2'} animate-fadeIn`}>
+      <div className={`text-center ${isMobileHorizontal ? 'mb-0.5' : 'mb-2'}`}>
+        <div className={`pixel-border-thick bg-gradient-to-br ${bgColor} ${isMobileHorizontal ? 'p-1' : 'p-2'} relative overflow-hidden`}>
           <div className="absolute inset-0 bg-pixel-pattern opacity-5"></div>
           <div className="relative z-10">
-            <div className="flex items-center justify-center space-x-3 mb-4">
-              <div className={`pixel-border bg-gradient-to-br ${color} p-3 relative overflow-hidden`}>
-                <Icon className="w-8 h-8 text-white" />
+            <div className={`flex items-center justify-center ${isMobileHorizontal ? 'space-x-0.5' : 'space-x-1'} ${isMobileHorizontal ? 'mb-1' : 'mb-2'}`}>
+              <div className={`pixel-border bg-gradient-to-br ${color} ${isMobileHorizontal ? 'p-0.5' : 'p-1.5'} relative overflow-hidden`}>
+                <Icon className={isMobileHorizontal ? 'w-4 h-4 text-white' : 'w-5 h-5 text-white'} />
                 <div className={`absolute inset-0 bg-gradient-to-br ${color} blur-sm opacity-50 -z-10`}></div>
               </div>
               <div>
-                <h2 className={`pixel-text ${isMobileHorizontal ? 'text-xl' : 'text-4xl'} font-black text-white mb-1`} style={{ textShadow: `3px 3px 0px rgba(0,0,0,0.7), 0 0 20px ${shadowColor}` }}>
+                <h2 className={`pixel-text ${isMobileHorizontal ? 'text-xs' : 'text-xl'} font-black text-white ${isMobileHorizontal ? 'mb-0' : 'mb-0.5'}`} style={{ textShadow: `1.5px 1.5px 0px rgba(0,0,0,0.7), 0 0 6px ${shadowColor}` }}>
                   {title}
                 </h2>
               </div>
