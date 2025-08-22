@@ -5,26 +5,23 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export interface TeamMember {
-  name: string; // fallback to email if name not available
+  full_name?: string;
   email: string;
 }
 
 
 export async function getTeamMembersBySession(session_id: string): Promise<TeamMember[]> {
-  // Query attempt_details for all unique emails for this session_id
+  if (!session_id) return [];
   const { data, error } = await supabase
-    .from('attempt_details')
-    .select('email')
+    .from('teams')
+    .select('full_name, email')
     .eq('session_id', session_id);
   if (error) {
-    console.error('[getTeamMembersBySession] Supabase error:', error);
+    console.error('[getTeamMembersBySession] Error:', error);
     return [];
   }
-  // Get unique emails
-  const uniqueEmails = Array.from(new Set((data || []).map((row: any) => row.email)));
-  // Optionally, fetch names from another table if available
-  // For now, use email as name fallback
-  return uniqueEmails.map(email => ({ name: email, email }));
+  console.log('[getTeamMembersBySession] Loaded team members:', data);
+  return data || [];
 }
 
 // New function to get team name by session_id

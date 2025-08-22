@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ConfirmModal from "./ui/ConfirmModal";
 import { CheckCircle, Search, Target, AlertTriangle } from "lucide-react";
 import {
   DndContext,
@@ -18,12 +19,73 @@ import { Question } from "../HackathonData";
 
 interface Level2SolutionCardProps {
   question: Question;
+  onProceedConfirmed?: () => void;
 }
 
-const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question }) => {
+// Draggable Item Component (single solution)
+interface DraggableItemProps {
+  id: string;
+  text: string;
+  isSelected: boolean;
+}
+
+const DraggableItem: React.FC<DraggableItemProps> = ({ id, text, isSelected }) => {
+  const { isMobile } = useDeviceLayout();
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id,
+    data: { text },
+  });
+  const style = {
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+  };
+  const colorClasses = isSelected
+    ? "pixel-border bg-gradient-to-r from-cyan-500 to-blue-500"
+    : "pixel-border bg-gradient-to-r from-gray-600 to-gray-700 hover:from-cyan-600 hover:to-blue-600";
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ ...style, ...(isMobile && { touchAction: 'none', WebkitTouchAction: 'none', msTouchAction: 'none' }) }}
+      {...listeners}
+      {...attributes}
+      className={`p-2 cursor-grab active:cursor-grabbing transition-all select-none font-[Verdana,Arial,sans-serif] ${isMobile ? "touch-manipulation" : "touch-none"} ${colorClasses} ${isDragging ? "opacity-0" : ""}`}
+    >
+      <span className="text-white text-xs font-bold pixel-text pointer-events-none font-[Verdana,Arial,sans-serif]">{text}</span>
+    </div>
+  );
+};
+
+// Droppable Zone Component (single solution)
+interface DroppableZoneProps {
+  id: string;
+  selectedItem: string;
+  children: React.ReactNode;
+}
+
+const DroppableZone: React.FC<DroppableZoneProps> = ({ id, selectedItem, children }) => {
+  const { isOver, setNodeRef } = useDroppable({ id, data: { isDropZone: true } });
+  return (
+    <div ref={setNodeRef} className="h-full relative font-[Verdana,Arial,sans-serif]">
+      {isOver && (
+        <div className="absolute inset-0">
+          <div className="absolute inset-1 border-2 border-dashed border-cyan-300 animate-pulse rounded-lg"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 border-3 border-yellow-400 rounded-full opacity-60 animate-ping"></div>
+          <div className="absolute inset-2 bg-cyan-400 opacity-20 animate-pulse rounded-lg"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-black animate-bounce pixel-text">
+            DROP HERE!
+          </div>
+        </div>
+      )}
+      <div className="relative z-10 h-full">{children}</div>
+    </div>
+  );
+};
+
+
+const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onProceedConfirmed }) => {
   const { isMobile, isHorizontal } = useDeviceLayout();
   const isMobileHorizontal = isMobile && isHorizontal;
-  const [selectedSolution, setSelectedSolution] = useState<string>("");
+  const [selectedSolution, setSelectedSolution] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
   const [activeItem, setActiveItem] = useState<{ text: string } | null>(null);
   const [showCaseChangeIndicator, setShowCaseChangeIndicator] = useState(false);
   const [previousQuestionId, setPreviousQuestionId] = useState<number | null>(null);
@@ -46,56 +108,12 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question }) => 
   const customCollisionDetection = (args: any) => {
     const pointerCollisions = pointerWithin(args);
     if (pointerCollisions.length > 0) {
-      const validCollisions = pointerCollisions.filter((collision: any) => collision.id === "solution-drop-zone");
+      const validCollisions = pointerCollisions.filter((collision: any) => collision.id === "solution-zone");
       if (validCollisions.length > 0) return validCollisions;
     }
     const rectCollisions = rectIntersection(args);
-    const validRectCollisions = rectCollisions.filter((collision: any) => collision.id === "solution-drop-zone");
+    const validRectCollisions = rectCollisions.filter((collision: any) => collision.id === "solution-zone");
     return validRectCollisions.length > 0 ? validRectCollisions : [];
-  };
-
-  // Draggable
-  const SolutionDraggable = ({ option }: { option: string }) => {
-    const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-      id: option, // id must match drop zone expectation
-      data: { text: option },
-    });
-    return (
-      <div
-        ref={setNodeRef}
-        {...attributes}
-        {...listeners}
-        className={`pixel-border bg-gradient-to-r from-gray-600 to-gray-700 p-2 text-white text-xs font-bold pixel-text cursor-grab active:cursor-grabbing transition-all select-none ${option === selectedSolution ? 'ring-2 ring-cyan-400' : ''} ${option === question.correctSolution ? 'ring-2 ring-green-400' : ''} ${isDragging ? 'opacity-0' : ''}`}
-        style={transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : {}}
-      >
-        {option}
-      </div>
-    );
-  };
-
-  // Droppable
-  const { setNodeRef: setDropZoneRef, isOver } = useDroppable({ id: "solution-drop-zone", data: { isDropZone: true } });
-
-  // DnD event handlers
-  const handleDragStart = (event: any) => {
-    const { active } = event;
-    const draggedData = active.data.current as { text: string };
-    if (draggedData && draggedData.text) setActiveItem(draggedData);
-  };
-  const handleDragCancel = () => setActiveItem(null);
-  const handleDragEnd = (event: any) => {
-    const { active, over } = event;
-    setActiveItem(null);
-    if (!over) return;
-    if (over.id !== "solution-drop-zone") return;
-    const dropZoneData = over.data.current as { isDropZone?: boolean };
-    if (!dropZoneData?.isDropZone) return;
-    const draggedData = active.data.current as { text: string };
-    if (!draggedData || !draggedData.text) return;
-    // Only allow drop if the dragged id matches a valid option
-    if (shuffledOptions.includes(active.id)) {
-      setSelectedSolution(draggedData.text);
-    }
   };
 
   // Shuffle solution options for variety
@@ -108,6 +126,30 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question }) => 
     return shuffled;
   };
   const shuffledOptions = React.useMemo(() => shuffleArray(question.solutionOptions), [question.solutionOptions]);
+
+  // Drag and Drop event handlers
+  const handleDragStart = (event: any) => {
+    const { active } = event;
+    const draggedData = active.data.current as { text: string };
+    if (draggedData && draggedData.text) setActiveItem(draggedData);
+  };
+
+  const handleDragCancel = () => setActiveItem(null);
+
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+    setActiveItem(null);
+    if (!over) return;
+    if (over.id !== "solution-zone") return;
+    const dropZoneData = over.data.current as { isDropZone?: boolean };
+    if (!dropZoneData?.isDropZone) return;
+    const draggedData = active.data.current as { text: string };
+    if (!draggedData || !draggedData.text) return;
+    // Only allow drop if the dragged id matches a valid option
+    if (shuffledOptions.some(opt => opt === draggedData.text)) {
+      setSelectedSolution(draggedData.text);
+    }
+  };
 
   return (
     <DndContext
@@ -186,7 +228,7 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question }) => 
                           className="animate-slideIn"
                           style={{ animationDelay: `${index * 100}ms` }}
                         >
-                          <SolutionDraggable option={option} />
+                          <DraggableItem id={option} text={option} isSelected={selectedSolution === option} />
                         </div>
                       ))}
                     </div>
@@ -196,7 +238,7 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question }) => 
             </div>
           </div>
 
-          {/* DND DROP ZONE - Middle Panel (match Level 1) */}
+          {/* DND DROP ZONE - Middle Panel */}
           <div className="flex-1 animate-slideIn flex flex-col min-h-0">
             <div className="pixel-border-thick bg-gradient-to-br from-cyan-900 to-cyan-800 h-full relative overflow-hidden transition-all duration-300 rounded-lg flex flex-col">
               {/* Header */}
@@ -215,61 +257,60 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question }) => 
               </div>
               {/* Drop Zone */}
               <div className="px-3 pb-3 flex-1 min-h-0 overflow-y-auto relative z-10">
-                <div
-                  ref={setDropZoneRef}
-                  className={`h-full relative font-[Verdana,Arial,sans-serif]`}
-                >
-                  {isOver && (
-                    <div className="absolute inset-0">
-                      <div className="absolute inset-1 border-2 border-dashed border-cyan-300 animate-pulse rounded-lg"></div>
-                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 border-3 border-yellow-400 rounded-full opacity-60 animate-ping"></div>
-                      <div className="absolute inset-2 bg-cyan-400 opacity-20 animate-pulse rounded-lg"></div>
-                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-black animate-bounce pixel-text">
-                        DROP HERE!
+                <DroppableZone id="solution-zone" selectedItem={selectedSolution}>
+                  {selectedSolution ? (
+                    <div className="h-full flex flex-col items-center justify-center">
+                      <div className="text-center py-2 border-b border-cyan-700/30">
+                        <div className="w-8 h-8 bg-cyan-800 pixel-border mx-auto mb-1 flex items-center justify-center animate-pulse">
+                          <CheckCircle className="w-5 h-5 text-cyan-300" />
+                        </div>
+                        <p className="text-cyan-100 font-black pixel-text text-xs">SOLUTION SELECTED!</p>
                       </div>
+                      <div className="flex-1 p-3 w-full">
+                        <div className="w-full">
+                          <div className="pixel-border-thick bg-gradient-to-r from-cyan-900 to-cyan-700 p-3 relative overflow-hidden">
+                            <div className="absolute inset-0 bg-pixel-pattern opacity-20"></div>
+                            <div className="relative z-10 flex items-center mb-2">
+                              <div className="w-6 h-6 bg-cyan-800 pixel-border mr-2 flex items-center justify-center flex-shrink-0">
+                                <CheckCircle className="w-4 h-4 text-cyan-300" />
+                              </div>
+                              <p className="text-white text-xs font-bold pixel-text leading-tight">{selectedSolution}</p>
+                            </div>
+                            <div className="absolute top-1 right-1 w-2 h-2 bg-cyan-800 rounded-full animate-ping"></div>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Proceed Button */}
+                      <button
+                        className="mt-4 px-6 py-3 pixel-border bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-black pixel-text text-sm rounded transition-all duration-200 shadow-lg"
+                        style={{ minWidth: 120 }}
+                        disabled={!selectedSolution}
+                        onClick={() => setShowConfirm(true)}
+                      >
+                        PROCEED
+                      </button>
+                      <ConfirmModal
+                        open={showConfirm}
+                        onClose={() => setShowConfirm(false)}
+                        onConfirm={() => {
+                          setShowConfirm(false);
+                          if (typeof onProceedConfirmed === 'function') onProceedConfirmed();
+                        }}
+                        confirmText="CONFIRM & PROCEED"
+                        title="Proceed to Next Step?"
+                        message="Are you sure you want to submit this solution? This action cannot be undone."
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 bg-white/20 mx-auto mb-3 flex items-center justify-center rounded-full">
+                        <CheckCircle className="w-8 h-8 text-white/60" />
+                      </div>
+                      <p className="text-white/80 font-bold text-sm">DROP ZONE</p>
+                      <p className="text-white/60 text-xs">Drag solution here</p>
                     </div>
                   )}
-                  <div className="relative z-10 h-full flex flex-col items-center justify-center">
-                    {selectedSolution ? (
-                      <>
-                        <div className="text-center py-2 border-b border-cyan-700/30">
-                          <div className="w-8 h-8 bg-cyan-800 pixel-border mx-auto mb-1 flex items-center justify-center animate-pulse">
-                            <CheckCircle className="w-5 h-5 text-cyan-300" />
-                          </div>
-                          <p className="text-cyan-100 font-black pixel-text text-xs">SOLUTION SELECTED!</p>
-                        </div>
-                        <div className="flex-1 p-3 w-full">
-                          <div className="w-full">
-                            <div className="pixel-border-thick bg-gradient-to-r from-cyan-900 to-cyan-700 p-3 relative overflow-hidden">
-                              <div className="absolute inset-0 bg-pixel-pattern opacity-20"></div>
-                              <div className="relative z-10 flex items-center mb-2">
-                                <div className="w-6 h-6 bg-cyan-800 pixel-border mr-2 flex items-center justify-center flex-shrink-0">
-                                  <CheckCircle className="w-4 h-4 text-cyan-300" />
-                                </div>
-                                <p className="text-white text-xs font-black pixel-text leading-tight">{selectedSolution}</p>
-                              </div>
-                              <div className="absolute top-1 right-1 w-2 h-2 bg-cyan-800 rounded-full animate-ping"></div>
-                            </div>
-                          </div>
-                        </div>
-                        {selectedSolution === question.correctSolution && (
-                          <div className="mt-2 text-green-400 font-bold text-xs">Correct!</div>
-                        )}
-                        {selectedSolution && selectedSolution !== question.correctSolution && (
-                          <div className="mt-2 text-red-400 font-bold text-xs">Incorrect</div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="text-center py-8">
-                        <div className="w-16 h-16 bg-white/20 mx-auto mb-3 flex items-center justify-center rounded-full">
-                          <CheckCircle className="w-8 h-8 text-white/60" />
-                        </div>
-                        <p className="text-white/80 font-bold text-sm">DROP ZONE</p>
-                        <p className="text-white/60 text-xs">Drag solution here</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                </DroppableZone>
               </div>
             </div>
             <DragOverlay dropAnimation={null}>

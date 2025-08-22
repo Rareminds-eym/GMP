@@ -32,6 +32,7 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
 
   useEffect(() => {
     if (session_id) {
+      console.log('[QuestionCard] session_id for getTeamMembersBySession:', session_id);
       getTeamMembersBySession(session_id).then(setTeamMembers);
       getTeamNameBySession(session_id).then(setTeamName);
     }

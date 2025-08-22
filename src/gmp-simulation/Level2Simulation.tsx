@@ -1,7 +1,10 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useGameSession } from "./useGameSession";
 import Level2Card from "./Level2Card";
+import { Timer } from "./Timer";
 import { Play, Clock, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import Level2Timer from "./Level2Timer";
 
 // Real eligibility check: only allow if user is in winners_list_level1
 import { supabase } from "../lib/supabase";
@@ -28,41 +31,115 @@ const showWalkthroughVideo = () => {
 };
 
 const Level2Simulation: React.FC = () => {
+  const navigate = useNavigate();
+  // --- All hooks must be at the top level, before any early returns ---
   const [canAccessLevel2, setCanAccessLevel2] = useState<boolean | null>(null);
+  const [hideProgress, setHideProgress] = React.useState(false);
   const [showLevelModal, setShowLevelModal] = useState(false);
   const [gameCompleted, setGameCompleted] = useState(false);
-  const [email, setEmail] = useState<string | null>(null);
-  const [session_id, setSessionId] = useState<string | null>(null);
+  const { session_id, email, teamInfoError, loadingIds } = useGameSession();
   const [showLevel2Card, setShowLevel2Card] = useState(false);
   const [showCountdown, setShowCountdown] = useState(false);
   const [countdownNumber, setCountdownNumber] = useState(3);
   const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [showCongrats, setShowCongrats] = useState(false);
+  const [fullName, setFullName] = useState<string | null>(null);
+  const [teamName, setTeamName] = useState<string | null>(null);
+  const [teamMembers, setTeamMembers] = useState<{ name: string; email: string }[]>([]);
+  const [level2Screen, setLevel2Screen] = useState(1);
   const totalQuestions = 5; // Adjust if dynamic
-  // On mount, fetch the authenticated user's email and session_id
+  const INITIAL_TIME = 10800;
+  const [timerActive, setTimerActive] = useState(false);
   useEffect(() => {
-    const fetchAuthInfo = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error || !session) {
-        setEmail(null);
-        setSessionId(null);
-        return;
+    console.log('[Level2Simulation][DEBUG] hideProgress state changed:', hideProgress);
+  }, [hideProgress]);
+  useEffect(() => {
+    console.log('[Level2Simulation][DEBUG] canAccessLevel2 state changed:', canAccessLevel2);
+  }, [canAccessLevel2]);
+
+  // Remove old auth fetch, now handled by useGameSession
+
+  // Fetch full name from winners_list_l1 if qualified
+  useEffect(() => {
+    const fetchFullNameAndTeam = async () => {
+      if (canAccessLevel2 && email) {
+        const { data, error } = await supabase
+          .from("winners_list_l1")
+          .select("full_name, team_name")
+          .eq("email", email)
+          .single();
+        if (data) {
+          if (data.full_name) setFullName(data.full_name);
+          if (data.team_name) setTeamName(data.team_name);
+          setShowCongrats(true);
+          setTimeout(() => setShowCongrats(false), 3500);
+        }
       }
-      const userEmail = session.user?.email || null;
-      setEmail(userEmail);
-      setSessionId(session.user?.id || null);
     };
-    fetchAuthInfo();
-  }, []);
+    fetchFullNameAndTeam();
+  }, [canAccessLevel2, email]);
 
   // Eligibility check
   useEffect(() => {
+    // Only check eligibility if email is available
+    if (!email) {
+      setCanAccessLevel2(null); // Still loading, don't check yet
+      return;
+    }
     const checkLevel2Access = async () => {
       setCanAccessLevel2(null); // loading
       const allowed = await isLevel2Allowed(email, session_id);
+      console.log('[Level2Simulation][DEBUG] Eligibility check result:', allowed, 'for email:', email, 'session_id:', session_id);
       setCanAccessLevel2(allowed);
     };
     checkLevel2Access();
   }, [email, session_id]);
+
+  // Fetch team members from attempt_details table using user's email (find team_name, then all members with that team_name)
+  useEffect(() => {
+    async function fetchTeamMembers() {
+      if (!email) {
+        console.warn('[Level2Simulation][DEBUG] No email found for logged-in user.');
+        return;
+      }
+      console.log('[Level2Simulation][DEBUG] Logged-in user email:', email);
+      // First, get the team_name for this user
+      const { data: userData, error: userError } = await supabase
+        .from('attempt_details')
+        .select('team_name')
+        .eq('email', email)
+        .limit(1)
+        .single();
+      console.log('[Level2Simulation][DEBUG] team_name fetch result:', { userData, userError });
+      if (userError || !userData?.team_name) {
+        setTeamMembers([]);
+        console.warn('[Level2Simulation][DEBUG] No team_name found for email:', email, { userError });
+        return;
+      }
+      const teamName = userData.team_name;
+      console.log('[Level2Simulation][DEBUG] Found team_name:', teamName);
+      // Now, get all members with this team_name
+      const { data, error } = await supabase
+        .from('attempt_details')
+        .select('email, name, full_name')
+        .eq('team_name', teamName);
+      console.log('[Level2Simulation][DEBUG] attempt_details fetch result for team_name:', { data, error });
+      if (data && Array.isArray(data)) {
+        // Remove duplicate emails (one per member)
+        const uniqueMembers = Object.values(
+          data.reduce((acc: Record<string, { email: string; name?: string; full_name?: string }>, curr) => {
+            acc[curr.email] = curr;
+            return acc;
+          }, {} as Record<string, { email: string; name?: string; full_name?: string }>));
+        setTeamMembers(uniqueMembers as { email: string; name?: string; full_name?: string }[]);
+        console.log('[Level2Simulation][DEBUG] Loaded teamMembers from attempt_details:', uniqueMembers);
+      } else {
+        setTeamMembers([]);
+        console.warn('[Level2Simulation][DEBUG] No team members found in attempt_details for team_name:', teamName, { data, error });
+      }
+    }
+    fetchTeamMembers();
+  }, [email]);
 
   // Completion logic
   const isHackathonCompleted = useCallback(() => {
@@ -75,19 +152,62 @@ const Level2Simulation: React.FC = () => {
   }, []);
 
   // UI rendering
+  console.log('[Level2Simulation][DEBUG] Render: canAccessLevel2 =', canAccessLevel2);
   if (canAccessLevel2 === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-800">
-        <div className="text-white text-lg font-bold animate-pulse">Checking access...</div>
+        <div className="text-white text-lg font-bold animate-pulse">Checking eligibility...</div>
+      </div>
+    );
+  }
+  // Block simulation UI while congrats modal is showing
+  if (showCongrats && fullName) {
+    console.log('[Level2Simulation][DEBUG] Congrats modal rendered. showCongrats =', showCongrats, 'fullName =', fullName);
+    return (
+      <div className="fixed inset-0 flex items-center justify-center z-50" style={{ background: 'radial-gradient(ellipse at center, #0f2027 0%, #2c5364 100%)' }}>
+        {/* Pixel/pattern overlays for extra effect */}
+        <div className="absolute inset-0 bg-pixel-pattern opacity-20 pointer-events-none"></div>
+        <div className="absolute inset-0 bg-scan-lines opacity-10 pointer-events-none"></div>
+        <div className="pixel-border-thick bg-gradient-to-br from-green-600 via-blue-700 to-purple-800 p-8 max-w-xl w-full text-center relative z-10 shadow-2xl rounded-xl">
+          <div className="flex justify-center mb-4">
+            <div className="w-14 h-14 bg-yellow-400 pixel-border flex items-center justify-center animate-bounce shadow-lg">
+              <span className="text-3xl">🎉</span>
+            </div>
+          </div>
+          <h2 className="text-2xl font-black text-green-100 mb-2 pixel-text drop-shadow-lg">Well Done, {fullName}!</h2>
+          <p className="text-lg font-black text-cyan-100 mb-2 pixel-text">
+            Team {teamName || "-"} has successfully advanced to Hackathon Level 2.
+          </p>
+          <p className="text-base text-yellow-100 font-bold mb-2 pixel-text flex items-center justify-center gap-2">
+            Innovation starts now—let’s go! <span className="text-2xl">💡</span>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Block simulation UI until fullName is set and congrats modal is finished
+  if (canAccessLevel2 && !fullName) {
+    console.log('[Level2Simulation][DEBUG] Waiting for fullName before rendering simulation UI. canAccessLevel2 =', canAccessLevel2, 'fullName =', fullName);
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-800">
+        <div className="text-white text-lg font-bold animate-pulse">Preparing your team details...</div>
       </div>
     );
   }
   if (!canAccessLevel2) {
+    console.log('[Level2Simulation][DEBUG] ACCESS DENIED modal rendered. canAccessLevel2 =', canAccessLevel2);
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-800">
         <div className="pixel-border-thick bg-gradient-to-r from-red-700 to-red-800 p-6 max-w-xl w-full text-center">
           <h2 className="text-2xl font-black text-red-100 mb-3 pixel-text">ACCESS DENIED</h2>
           <p className="text-red-200 mb-4 text-sm font-bold">You are not eligible to participate in Level 2 (HL2).<br/>Only winners from Level 1 can access this round.</p>
+          <button
+            onClick={() => navigate('/modules')}
+            className="mt-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded font-bold pixel-border"
+          >
+            Back to Modules
+          </button>
         </div>
       </div>
     );
@@ -95,35 +215,120 @@ const Level2Simulation: React.FC = () => {
 
   // Countdown overlay
   if (showCountdown) {
+    // Show 'GET READY' if on case selection (first screen), else 'GET READY TO CONTINUE!'
+    const showGetReady = currentQuestion === 0;
     return (
       <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
-        <div className="text-8xl md:text-9xl font-black text-white pixel-text animate-pulse mb-4">
-          {countdownNumber}
-        </div>
-      </div>
-    );
-  }
-
-  if (showLevel2Card) {
-    // Progress bar above Level2Card
-    return (
-      <div className="min-h-screen bg-gray-800 flex flex-col items-center justify-center p-2 relative">
-        <div className="w-full max-w-xl px-2">
-          <div className="w-full bg-gray-700 rounded-full h-4 mb-4">
-            <div
-              className="bg-green-500 h-4 rounded-full transition-all"
-              style={{ width: `${((currentQuestion + 1) / totalQuestions) * 100}%` }}
-            />
+        <div className="text-center">
+          <div className="text-8xl md:text-9xl font-black text-white pixel-text animate-pulse mb-4">
+            {countdownNumber}
+          </div>
+          <div className="text-xl md:text-2xl font-bold text-gray-300 pixel-text">
+            {showGetReady ? "GET READY TO START" : "GET READY TO CONTINUE!"}
           </div>
         </div>
-        <Level2Card
-          teamName="Demo Team"
-          teamMembers={[{ name: "Alice", email: "alice@example.com" }, { name: "Bob", email: "bob@example.com" }]}
-        />
       </div>
     );
   }
 
+  // --- HL2 screen state management ---
+  // (already declared at the top with other hooks)
+  // ---
+  if (showLevel2Card) {
+    const progress = ((currentQuestion + 1) / totalQuestions) * 100;
+    const isCaseSelection = level2Screen === 1 && showLevel2Card;
+    // Loader overlay at top level
+    if (hideProgress) {
+      return (
+        <div className="fixed inset-0 flex flex-col items-center justify-center bg-gray-800 bg-opacity-95 z-50 animate-fadeIn">
+          <div className="w-16 h-16 rounded-full bg-yellow-200 flex items-center justify-center mb-6 animate-bounce">
+            <svg className="w-12 h-12 text-yellow-600 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth="4" className="opacity-25" /><path d="M4 12a8 8 0 018-8" strokeWidth="4" className="opacity-75" /></svg>
+          </div>
+          <div className="text-yellow-200 text-2xl font-black pixel-text text-center">Preparing selected case for solution round...</div>
+        </div>
+      );
+    }
+    // Handler to advance screen and show loader
+    const handleAdvanceScreen = () => {
+      setHideProgress(true);
+      setTimeout(() => {
+        setHideProgress(false);
+        setLevel2Screen((s) => s + 1);
+      }, 1200);
+    };
+    return (
+      <div className="min-h-screen bg-gray-800 flex flex-col items-center justify-center p-2 relative">
+        <div className="container mx-auto px-3 py-2">
+          <div className="flex items-center justify-between pixel-border bg-gradient-to-r from-gray-700 to-gray-600 px-2 py-1 mb-4">
+            {/* Left - Level and Case */}
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gray-700 pixel-border flex items-center justify-center">
+                <span className="text-gray-100 font-black text-sm pixel-text">2</span>
+              </div>
+              <div>
+                <h1 className="text-gray-100 font-black text-sm pixel-text">LEVEL 2</h1>
+                <div className="text-white text-xs font-bold bg-violet-600 px-3 py-1 rounded-lg">
+                  {isCaseSelection ? 'Case Selection' : `CASE ${currentQuestion + 1}/${totalQuestions}`}
+                </div>
+              </div>
+            </div>
+            {/* Right - Progress and Timer */}
+            <div className="flex items-center gap-4">
+              {/* Progress Bar */}
+              <div className="flex items-center gap-1">
+                <div className="w-16 h-2 bg-gray-800 pixel-border overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <span className="text-white text-xs font-black min-w-[2rem] pixel-text">
+                  {Math.round(progress)}%
+                </span>
+                <div className="w-3 h-3 bg-yellow-600 pixel-border flex items-center justify-center">
+                  <svg className="w-2 h-2 text-yellow-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 17.75L18.2 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.44 4.73L5.8 21z" /></svg>
+                </div>
+              </div>
+              {/* Timer */}
+              <div className="flex items-center gap-1 pixel-border bg-gradient-to-r from-red-700 to-red-600 px-2 py-1">
+                <div className="w-3 h-3 bg-gray-800 pixel-border flex items-center justify-center">
+                  <Clock className="w-2 h-2 text-gray-300" />
+                </div>
+                <Level2Timer
+                  initialTime={INITIAL_TIME}
+                  isActive={timerActive}
+                  onTimeUp={() => setTimerActive(false)}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="relative w-full">
+          <Level2Card
+            teamName={teamName || ''}
+            teamMembers={teamMembers}
+            screen={level2Screen}
+            onAdvanceScreen={handleAdvanceScreen}
+          />
+          {/* Countdown overlay for screen 1 */}
+          {isCaseSelection && showCountdown && (
+            <div className="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+              <div className="text-center">
+                <div className="text-8xl md:text-9xl font-black text-white pixel-text animate-pulse mb-4">
+                  {countdownNumber}
+                </div>
+                <div className="text-xl md:text-2xl font-bold text-gray-300 pixel-text">
+                  GET READY TO START
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  console.log('[Level2Simulation][DEBUG] Simulation UI rendered. canAccessLevel2 =', canAccessLevel2, 'showCongrats =', showCongrats, 'fullName =', fullName);
   return (
     <div className="min-h-screen bg-gray-800 flex items-center justify-center p-2 relative">
       {/* Background Pattern */}
@@ -141,16 +346,16 @@ const Level2Simulation: React.FC = () => {
         <p className="text-purple-100 mb-4 text-sm font-bold">
           Select the best solutions for each GMP case scenario
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
           <div className="pixel-border bg-gradient-to-r from-blue-700 to-blue-600 p-2">
             <div className="w-6 h-6 bg-blue-800 pixel-border mx-auto mb-1 flex items-center justify-center">
               <Clock className="w-3 h-3 text-blue-300" />
             </div>
             <h3 className="font-black text-white text-xs pixel-text">
-              90 MINUTES
+              180 MINUTES
             </h3>
             <p className="text-blue-100 text-xs font-bold">
-              Complete all solutions
+              Select 1 case , find solution and Innovate.
             </p>
           </div>
           <div className="pixel-border bg-gradient-to-r from-orange-700 to-orange-600 p-2">
@@ -161,7 +366,18 @@ const Level2Simulation: React.FC = () => {
               5 CASES
             </h3>
             <p className="text-orange-100 text-xs font-bold">
-              Random GMP scenarios
+              Team attempted case in L1
+            </p>
+          </div>
+          <div className="pixel-border bg-gradient-to-r from-purple-700 to-purple-600 p-2">
+            <div className="w-6 h-6 bg-purple-800 pixel-border mx-auto mb-1 flex items-center justify-center">
+              <Play className="w-3 h-3 text-purple-300" />
+            </div>
+            <h3 className="font-black text-white text-xs pixel-text">
+              1 INNOVATION ROUND
+            </h3>
+            <p className="text-purple-100 text-xs font-bold">
+              Answer precisely and add attachment
             </p>
           </div>
         </div>
@@ -170,6 +386,7 @@ const Level2Simulation: React.FC = () => {
             onClick={() => {
               setShowCountdown(true);
               setCountdownNumber(3);
+              setTimerActive(false); // Ensure timer is not running during countdown
               let i = 3;
               const interval = setInterval(() => {
                 i--;
@@ -178,6 +395,7 @@ const Level2Simulation: React.FC = () => {
                   clearInterval(interval);
                   setShowCountdown(false);
                   setShowLevel2Card(true);
+                  setTimerActive(true); // Start timer after countdown
                 }
               }, 1000);
             }}
@@ -211,6 +429,12 @@ const Level2Simulation: React.FC = () => {
       </div>
     </div>
   );
+// Stop timer if game is completed
+useEffect(() => {
+  if (gameCompleted) {
+    setTimerActive(false);
+  }
+}, [gameCompleted]);
 };
 
 export default Level2Simulation;
