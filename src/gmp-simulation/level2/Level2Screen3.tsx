@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { hackathonData } from '../HackathonData';
@@ -7,13 +7,17 @@ import { useDeviceLayout } from '../../hooks/useOrientation';
 import { Lightbulb, Users, Zap, Target, Rocket, Globe, FileText, Sparkles, Upload } from 'lucide-react';
 import { StageData, StageFormData } from './types';
 import Header from './components/Header';
-
 import ProgressTrack from './components/ProgressTrack';
 import StageContent from './components/StageContent';
 import NavigationBar from './components/NavigationBar';
 import ConfirmationModal from './components/ConfirmationModal';
 import LevelCompletionPopup from './components/LevelCompletionPopup';
 import BriefPopup from './components/BriefPopup';
+// import ProgressIndicator from './components/ProgressIndicator';
+import ResetProgressModal from './components/ResetProgressModal';
+import Toast from './components/Toast';
+import LoadingScreen from './components/LoadingScreen';
+import { useLevel2Screen3Progress, convertProgressToFormData } from './hooks/useLevel2Screen3Progress';
 
 const Level2Screen3: React.FC = () => {
   const [selectedCase, setSelectedCase] = useState<{ email: string; case_id: number; updated_at: string, description?: string } | null>(null);
@@ -23,6 +27,31 @@ const Level2Screen3: React.FC = () => {
   const [caseError, setCaseError] = useState<string | null>(null);
   // Fetch selected case on mount
   const { user } = useAuth();
+
+  // Move isStageComplete here so it is defined before any usage
+  const isStageComplete = (stageNum: number) => {
+    switch(stageNum) {
+      case 1: return formData.problem.length > 0;
+      case 2: return formData.technology.length > 0;
+      case 3: return formData.collaboration.length > 0;
+      case 4: return formData.creativity.length > 0;
+      case 5: return formData.speedScale.length > 0;
+      case 6: return formData.impact.length > 0;
+      case 7:
+        // All final statement fields must be filled (use unique keys)
+        return (
+          !!formData.finalProblem && formData.finalProblem.trim() !== '' &&
+          !!formData.finalTechnology && formData.finalTechnology.trim() !== '' &&
+          !!formData.finalCollaboration && formData.finalCollaboration.trim() !== '' &&
+          !!formData.finalCreativity && formData.finalCreativity.trim() !== '' &&
+          !!formData.finalSpeedScale && formData.finalSpeedScale.trim() !== '' &&
+          !!formData.finalImpact && formData.finalImpact.trim() !== ''
+        );
+      case 8: return true; // Prototype/Demo/Sketch is optional
+      case 9: return formData.reflection.length > 0;
+      default: return false;
+    }
+  };
   useEffect(() => {
     if (!user) return;
     // Fetch selected_cases data for the current user from Supabase
@@ -78,8 +107,38 @@ const Level2Screen3: React.FC = () => {
   const [showCompletionPopup, setShowCompletionPopup] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [toast, setToast] = useState<{ show: boolean; type: 'success' | 'error'; message: string }>({
+    show: false,
+    type: 'success',
+    message: ''
+  });
+  const [hasRestoredProgress, setHasRestoredProgress] = useState(false);
+  const [isLevelCompleted, setIsLevelCompleted] = useState(false);
+  const [isInitialPageLoad, setIsInitialPageLoad] = useState(true);
   const { isMobile, isHorizontal } = useDeviceLayout();
   const isMobileHorizontal = isMobile && isHorizontal;
+
+  const showToast = useCallback((type: 'success' | 'error', message: string) => {
+    setToast({ show: true, type, message });
+  }, []);
+
+  const hideToast = useCallback(() => {
+    setToast(prev => ({ ...prev, show: false }));
+  }, []);
+  
+  // Progress management hook
+  const {
+    progress: savedProgress,
+    isLoading: isProgressLoading,
+    error: progressError,
+    saveProgress,
+    loadProgress,
+    markCompleted,
+    resetProgress,
+    hasExistingProgress
+  } = useLevel2Screen3Progress();
 
   // Calculate progress based on completed stages
   useEffect(() => {
@@ -91,6 +150,53 @@ const Level2Screen3: React.FC = () => {
     }
     setProgress(completed === 0 ? 0 : (completed / inputStages.length) * 100);
   }, [formData]);
+
+  // Remove auto-save - we'll save only on explicit user action
+
+  // Debug stage changes
+  useEffect(() => {
+    console.log('🎪 Stage changed to:', stage);
+  }, [stage]);
+
+  // Manage initial page load state
+  useEffect(() => {
+    // Set a minimum loading time for smooth UX, then check if all loading is complete
+    const timer = setTimeout(() => {
+      if (user && !isProgressLoading && !loadingCase) {
+        console.log('🎮 Initial page load complete');
+        setIsInitialPageLoad(false);
+      }
+    }, 1000); // Minimum 1 second loading time
+
+    return () => clearTimeout(timer);
+  }, [user, isProgressLoading, loadingCase]);
+
+  // Load saved progress on component mount (only once)
+  useEffect(() => {
+    if (savedProgress && hasExistingProgress && user && !hasRestoredProgress) {
+      console.log('📥 Restoring saved progress:');
+      console.log('   - Saved stage:', savedProgress.current_stage);
+      console.log('   - Saved completed stages:', savedProgress.completed_stages);
+      console.log('   - Is completed:', savedProgress.is_completed);
+      console.log('   - Raw savedProgress object:', savedProgress);
+      
+      const restoredFormData = convertProgressToFormData(savedProgress);
+      console.log('   - Restored form data:', restoredFormData);
+      
+      setFormData(restoredFormData);
+      console.log('   - Setting stage to:', savedProgress.current_stage);
+      setStage(savedProgress.current_stage);
+      
+      // Check if level was already completed
+      if (savedProgress.is_completed) {
+        console.log('🏆 Level was already completed! Stopping timer and showing completion popup.');
+        setIsLevelCompleted(true);
+        setShowCompletionPopup(true);
+      }
+      
+      setHasRestoredProgress(true);
+    }
+  }, [savedProgress, hasExistingProgress, user, hasRestoredProgress]);
 
   const handleFormDataChange = (field: keyof StageFormData, value: string | File | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -191,30 +297,6 @@ const Level2Screen3: React.FC = () => {
 
   const currentStageData = stages[stage - 1];
 
-  const isStageComplete = (stageNum: number) => {
-    switch(stageNum) {
-      case 1: return formData.problem.length > 0;
-      case 2: return formData.technology.length > 0;
-      case 3: return formData.collaboration.length > 0;
-      case 4: return formData.creativity.length > 0;
-      case 5: return formData.speedScale.length > 0;
-      case 6: return formData.impact.length > 0;
-      case 7:
-        // All final statement fields must be filled (use unique keys)
-        return (
-          !!formData.finalProblem && formData.finalProblem.trim() !== '' &&
-          !!formData.finalTechnology && formData.finalTechnology.trim() !== '' &&
-          !!formData.finalCollaboration && formData.finalCollaboration.trim() !== '' &&
-          !!formData.finalCreativity && formData.finalCreativity.trim() !== '' &&
-          !!formData.finalSpeedScale && formData.finalSpeedScale.trim() !== '' &&
-          !!formData.finalImpact && formData.finalImpact.trim() !== ''
-        );
-      case 8: return true; // Prototype/Demo/Sketch is optional
-      case 9: return formData.reflection.length > 0;
-      default: return false;
-    }
-  };
-
   const canProceed = isStageComplete(stage);
 
   const handleProceed = () => {
@@ -223,23 +305,138 @@ const Level2Screen3: React.FC = () => {
     }
   };
 
-  const handleConfirmProceed = () => {
-    setShowProceedWarning(false);
-    if (stage === 8) {
-      // Just advance to stage 9, do not show completion popup yet
-      setStage(stage + 1);
-    } else if (stage === 9) {
-      // User is completing the last stage, show completion popup
-      setShowCompletionPopup(true);
-    } else {
-      setStage(stage + 1);
+  const handleConfirmProceed = useCallback(async () => {
+    console.log('🎯 handleConfirmProceed started - Current stage:', stage);
+    setIsSaving(true);
+    
+    // Calculate completed stages including current stage
+    const completedStages: number[] = [];
+    for (let i = 1; i <= stage; i++) {
+      if (isStageComplete(i)) completedStages.push(i);
     }
+    console.log('📊 Completed stages:', completedStages);
+    
+    try {
+      // Determine the next stage before saving
+      let nextStage = stage;
+      if (stage === 8) {
+        nextStage = 9;
+      } else if (stage === 9) {
+        nextStage = 9; // Stay on 9 for completion
+      } else {
+        nextStage = stage + 1;
+      }
+      
+      console.log(`💾 Attempting to save progress with next stage: ${nextStage}`);
+      // Save progress with the NEXT stage, not current stage
+      const saveSuccessful = await saveProgress(formData, nextStage, completedStages);
+      console.log('💾 Save result:', saveSuccessful);
+      
+      if (!saveSuccessful) {
+        // Show error and don't proceed
+        console.error('❌ Failed to save progress - not proceeding to next stage');
+        showToast('error', 'Failed to save your progress. Please check your connection and try again.');
+        setIsSaving(false);
+        return;
+      }
+      
+      console.log('✅ Save successful, proceeding with stage advancement');
+      // Only proceed if save was successful
+      setShowProceedWarning(false);
+      
+      if (stage === 8) {
+        console.log('🎭 Moving from stage 8 to 9');
+        setStage(9);
+      } else if (stage === 9) {
+        console.log('🏁 Completing final stage');
+        // User is completing the last stage, mark as completed and show completion popup
+        const completionSuccessful = await markCompleted();
+        if (completionSuccessful) {
+          console.log('✅ Level completed! Stopping timer.');
+          setIsLevelCompleted(true);
+          showToast('success', 'Progress saved successfully! 🎉');
+          setShowCompletionPopup(true);
+        } else {
+          console.error('Failed to mark completion - please try again');
+          showToast('error', 'Failed to mark completion. Please try again.');
+        }
+      } else {
+        console.log(`🚀 Moving from stage ${stage} to ${nextStage}`);
+        showToast('success', 'Progress saved successfully!');
+        console.log('🎯 About to call setStage with:', nextStage);
+        setStage(nextStage);
+        console.log('🎯 setStage called, should advance to stage:', nextStage);
+      }
+      
+    } catch (error) {
+      console.error('💥 Error saving progress:', error);
+      showToast('error', 'An error occurred while saving. Please try again.');
+      // Don't proceed to next stage if save failed
+    } finally {
+      console.log('🏁 handleConfirmProceed finished');
+      setIsSaving(false);
+    }
+  }, [stage, markCompleted, saveProgress, formData, isStageComplete, showToast]);
+
+  // Handle loading saved progress
+  const handleLoadProgress = useCallback(async () => {
+    const loaded = await loadProgress();
+    if (loaded) {
+      const restoredFormData = convertProgressToFormData(loaded);
+      setFormData(restoredFormData);
+      setStage(loaded.current_stage);
+    }
+  }, [loadProgress]);
+
+  // Handle resetting progress
+  const handleResetProgress = useCallback(async () => {
+    const success = await resetProgress();
+    if (success) {
+      // Reset form data and stage
+      setFormData({
+        problem: '',
+        technology: '',
+        collaboration: '',
+        creativity: '',
+        speedScale: '',
+        impact: '',
+        reflection: '',
+        file: null,
+        finalProblem: '',
+        finalTechnology: '',
+        finalCollaboration: '',
+        finalCreativity: '',
+        finalSpeedScale: '',
+        finalImpact: '',
+      });
+      setStage(1);
+    }
+    setShowResetModal(false);
+  }, [resetProgress]);
+
+  // Determine loading message and show loading screen for various scenarios
+  const getLoadingMessage = () => {
+    if (!user) return "Authenticating...";
+    if (isInitialPageLoad) return "Initializing Innovation Quest...";
+    if (isProgressLoading) return "Loading your progress...";
+    if (loadingCase) return "Loading your selected case...";
+    return "Loading...";
   };
+
+  // Show loading screen for various loading states (excluding saving progress)
+  // Note: isSaving is handled by the ConfirmationModal with loading state
+  if (!user || isInitialPageLoad || (user && isProgressLoading) || loadingCase) {
+    return (
+      <LoadingScreen 
+        message={getLoadingMessage()} 
+        isMobileHorizontal={isMobileHorizontal} 
+      />
+    );
+  }
 
   return (
     <>
       <div
-
         className={`min-h-screen bg-gray-800 relative flex flex-col compact-all${isMobileHorizontal ? ' compact-mobile-horizontal' : ''}`}
         style={{ fontFamily: 'Verdana, Geneva, Tahoma, sans-serif', fontSize: isMobileHorizontal ? '12px' : '13px', lineHeight: 1.2 }}
       >
@@ -255,7 +452,9 @@ const Level2Screen3: React.FC = () => {
             isMobileHorizontal={isMobileHorizontal}
             selectedCase={selectedCase}
             onShowBrief={() => setShowBrief(true)}
+            timerStopped={isLevelCompleted}
           />
+          
           {/* Loading/Error for Brief Button */}
           {loadingCase && (
             <div className="text-xs text-cyan-300 mt-2">Loading previously selected case...</div>
@@ -307,23 +506,38 @@ const Level2Screen3: React.FC = () => {
           {/* Confirmation Modal */}
           <ConfirmationModal 
             show={showProceedWarning}
-            onClose={() => setShowProceedWarning(false)}
+            onClose={() => !isSaving && setShowProceedWarning(false)}
             onConfirm={handleConfirmProceed}
+            isLoading={isSaving}
           />
 
           {/* Level Completion Popup */}
-         <LevelCompletionPopup
-  show={showCompletionPopup && stage === 9}
-  onContinue={() => navigate('/modules')}
-  message={
-    <>
-      Congratulations! You have completed all stages of Level 2.
-      <br />
-      The results will be announced via email, and you can also check them on our website: <a href="https://rareminds.in" target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8', textDecoration: 'underline' }}>rareminds.in</a>
-    </>
-  }
-  
-/>
+          <LevelCompletionPopup
+            show={showCompletionPopup && isLevelCompleted}
+            onContinue={() => navigate('/modules')}
+            message={
+              <>
+                Congratulations! You have completed all stages of Level 2.
+                <br />
+                The results will be announced via email, and you can also check them on our website: <a href="https://rareminds.in" target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8', textDecoration: 'underline' }}>rareminds.in</a>
+              </>
+            }
+          />
+
+          {/* Reset Progress Modal */}
+          <ResetProgressModal
+            show={showResetModal}
+            onClose={() => setShowResetModal(false)}
+            onConfirm={handleResetProgress}
+          />
+
+          {/* Toast Notifications */}
+          <Toast
+            show={toast.show}
+            type={toast.type}
+            message={toast.message}
+            onClose={hideToast}
+          />
 
         </div>
       </div>

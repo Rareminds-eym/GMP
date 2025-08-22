@@ -3,7 +3,7 @@ import { Award, ChevronRight, FileText } from 'lucide-react';
 import { HeaderProps } from '../types';
 import Timer from './Timer';
 
-const Header: React.FC<HeaderProps> = ({ currentStageData, isMobileHorizontal, selectedCase, onShowBrief }) => {
+const Header: React.FC<HeaderProps> = ({ currentStageData, isMobileHorizontal, selectedCase, onShowBrief, timerStopped = false }) => {
   return (
     <div className={isMobileHorizontal ? 'mb-3' : 'mb-6'}>
       <div 
@@ -47,7 +47,7 @@ const Header: React.FC<HeaderProps> = ({ currentStageData, isMobileHorizontal, s
           {/* Right: Timer and then Brief Button */}
           <div className="flex items-center space-x-2">
             <div className={isMobileHorizontal ? 'mr-1' : 'mr-4'}>
-              <Timer isMobileHorizontal={isMobileHorizontal} />
+              <Timer isMobileHorizontal={isMobileHorizontal} stopped={timerStopped} />
             </div>
             {selectedCase && onShowBrief && (
               <button

@@ -31,6 +31,7 @@ export interface HeaderProps {
   isMobileHorizontal: boolean;
   selectedCase?: { email: string; case_id: number; updated_at: string } | null;
   onShowBrief?: () => void;
+  timerStopped?: boolean;
 }
 
 export interface ProgressTrackProps {
@@ -64,6 +65,7 @@ export interface ConfirmationModalProps {
   show: boolean;
   onClose: () => void;
   onConfirm: () => void;
+  isLoading?: boolean;
 }
 
 export interface StageProps {

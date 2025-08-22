@@ -130,7 +130,8 @@ const getUpsertConflictColumns = (tableName) => {
     'level_1': 'user_id,module_number,level_number,session_id',
     'level2_game_data': 'user_id,module_id,level_number',
     'level3_progress': 'user_id,module,level,scenario_index',
-    'level_4': 'user_id,module'
+    'level_4': 'user_id,module',
+    'level2_screen3_progress': 'user_id'
   };
 
   return conflictColumns[tableName] || 'id';

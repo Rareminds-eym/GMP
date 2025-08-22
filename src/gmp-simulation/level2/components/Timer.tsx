@@ -3,21 +3,22 @@ import React, { useEffect, useState } from 'react';
 interface TimerProps {
   initialSeconds?: number;
   isMobileHorizontal?: boolean;
+  stopped?: boolean;
 }
 
 
 const THREE_HOURS = 3 * 60 * 60; // 10800 seconds
 
-const Timer: React.FC<TimerProps> = ({ initialSeconds = THREE_HOURS, isMobileHorizontal }) => {
+const Timer: React.FC<TimerProps> = ({ initialSeconds = THREE_HOURS, isMobileHorizontal, stopped = false }) => {
   const [seconds, setSeconds] = useState(initialSeconds);
 
   useEffect(() => {
-    if (seconds <= 0) return;
+    if (seconds <= 0 || stopped) return;
     const interval = setInterval(() => {
       setSeconds((s) => (s > 0 ? s - 1 : 0));
     }, 1000);
     return () => clearInterval(interval);
-  }, [seconds]);
+  }, [seconds, stopped]);
 
   const pad = (n: number) => n.toString().padStart(2, '0');
   const hrs = Math.floor(seconds / 3600);
