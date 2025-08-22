@@ -72,11 +72,13 @@ const Level2Screen3: React.FC = () => {
 
   // Calculate progress based on completed stages
   useEffect(() => {
+    // Only count stages that require user input (exclude always-complete/optional stages 7 and 8)
+    const inputStages = [1, 2, 3, 4, 5, 6, 9];
     let completed = 0;
-    for (let i = 1; i <= 9; i++) {
+    for (const i of inputStages) {
       if (isStageComplete(i)) completed++;
     }
-    setProgress((completed / 9) * 100);
+    setProgress(completed === 0 ? 0 : (completed / inputStages.length) * 100);
   }, [formData]);
 
   const handleFormDataChange = (field: keyof StageFormData, value: string | File | null) => {
@@ -221,7 +223,6 @@ const Level2Screen3: React.FC = () => {
         {/* Header */}
         <Header 
           currentStageData={currentStageData}
-          progress={progress}
           isMobileHorizontal={isMobileHorizontal}
           selectedCase={selectedCase}
           onShowBrief={() => setShowBrief(true)}
@@ -236,28 +237,51 @@ const Level2Screen3: React.FC = () => {
       {/* Brief Popup */}
       {showBrief && selectedCase && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 transition-all"
-          onClick={e => {
-            if (e.target === e.currentTarget) setShowBrief(false);
-          }}
+          className={`fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-2 sm:p-4 font-[Verdana,Arial,sans-serif]`}
+          onClick={e => { if (e.target === e.currentTarget) setShowBrief(false); }}
         >
-          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full relative border-2 border-cyan-700 animate-fade-in">
+          <div
+            className={
+              `pixel-border-thick bg-blue-100 w-full ` +
+              `max-w-2xl min-h-[180px] max-h-[90vh] text-center relative overflow-hidden animate-slideIn ` +
+              `flex flex-col justify-between ` +
+              (isMobileHorizontal
+                ? 'p-3 max-w-sm min-h-[170px] max-h-[75vh] text-sm'
+                : 'p-4 sm:p-8')
+            }
+            style={isMobileHorizontal ? { fontSize: '15px', borderRadius: 12 } : {}}
+          >
+            {/* Background Pattern */}
+            <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
+            <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
+            {/* Close Button */}
             <button
-              className="absolute top-2 right-2 text-gray-400 hover:text-cyan-700 text-2xl font-bold focus:outline-none"
               onClick={() => setShowBrief(false)}
-              aria-label="Close"
+              className={`absolute top-2 right-2 z-20 bg-blue-200 hover:bg-blue-300 text-blue-900 rounded-full shadow pixel-border flex items-center justify-center ${isMobileHorizontal ? 'w-7 h-7 p-0' : 'p-1'}`}
+              aria-label="Close case modal"
+              style={isMobileHorizontal ? { minWidth: 0, minHeight: 0, width: '1.75rem', height: '1.75rem' } : {}}
             >
-              &times;
+              <svg xmlns="http://www.w3.org/2000/svg" className={isMobileHorizontal ? "h-5 w-5 mx-auto my-auto" : "h-5 w-5"} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
-            <div className="flex items-center mb-3">
-              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-cyan-100 mr-3">
-                <svg className="w-5 h-5 text-cyan-700" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-3-3v6m9 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              </span>
-              <h2 className="text-xl font-bold text-cyan-800">Selected Question</h2>
-            </div>
-            <div className="mb-2 text-gray-700 text-base">
-              {/* Show the question description. Replace with your actual field name if different. */}
-              {selectedCase.description || 'No description available for this question.'}
+            {/* Content */}
+            <div className="relative z-10 flex flex-col h-full justify-between">
+              {/* Heading */}
+              <div className={`flex items-center justify-center space-x-2 mb-4 ${isMobileHorizontal ? 'mb-3' : ''}`}>
+                <div className={`bg-blue-400 pixel-border flex items-center justify-center ${isMobileHorizontal ? 'w-8 h-8' : 'w-8 h-8'} animate-bounce relative`}>
+                  <span className={`absolute inline-flex h-full w-full rounded-full bg-blue-300 opacity-60 animate-ping`}></span>
+                  <svg className={`text-blue-900 ${isMobileHorizontal ? 'w-6 h-6' : 'w-5 h-5'} relative z-10`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-3-3v6m9 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <h2 className={`font-black text-blue-900 pixel-text ${isMobileHorizontal ? 'text-lg' : 'text-lg'}`}>
+                  Selected Question
+                </h2>
+              </div>
+              {/* Scrollable Question Area */}
+              <div className={`flex-1 overflow-y-auto mb-4 ${isMobileHorizontal ? 'max-h-48' : 'max-h-56'}`}>
+                <span className={`font-bold text-blue-900 pixel-text whitespace-pre-line ${isMobileHorizontal ? 'text-base' : 'text-base'}`}>
+                  {selectedCase.description || 'No description available for this question.'}
+                </span>
+              </div>
+              {/* Buttons Row (none for brief popup) */}
             </div>
           </div>
         </div>

@@ -2,7 +2,7 @@ import React from 'react';
 import { Award, ChevronRight, FileText } from 'lucide-react';
 import { HeaderProps } from '../types';
 
-const Header: React.FC<HeaderProps> = ({ currentStageData, progress, isMobileHorizontal, selectedCase, onShowBrief }) => {
+const Header: React.FC<HeaderProps> = ({ currentStageData, isMobileHorizontal, selectedCase, onShowBrief }) => {
   return (
     <div className={isMobileHorizontal ? 'mb-3' : 'mb-6'}>
       <div 
@@ -45,43 +45,26 @@ const Header: React.FC<HeaderProps> = ({ currentStageData, progress, isMobileHor
             </div>
           </div>
           
-          {/* Progress Circle & Brief Button */}
+          {/* Brief Button */}
           <div className="flex items-center space-x-2">
-            <div className={`relative ${isMobileHorizontal ? 'w-8 h-8' : 'w-16 h-16'}`}>
-              <svg className="transform -rotate-90 w-full h-full" viewBox="0 0 36 36">
-                <path
-                  className="stroke-gray-700"
-                  strokeWidth="3"
-                  fill="transparent"
-                  d="M18 2.5 A 15.5 15.5 0 1 1 18 2.499"
-                />
-                <path
-                  className={`stroke-cyan-400 transition-all duration-1000 ease-out drop-shadow-lg`}
-                  strokeWidth="3"
-                  fill="transparent"
-                  strokeLinecap="round"
-                  strokeDasharray={`${progress}, 100`}
-                  d="M18 2.5 A 15.5 15.5 0 1 1 18 2.499"
-                  style={{
-                    filter: 'drop-shadow(0 0 8px rgba(6,182,212,0.6))'
-                  }}
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className={`pixel-text font-black text-white ${isMobileHorizontal ? 'text-[9px]' : 'text-sm'}`}
-                      style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>
-                  {Math.round(progress)}%
-                </span>
-              </div>
-            </div>
-            {/* Brief Button */}
             {selectedCase && onShowBrief && (
               <button
-                className="ml-2 flex items-center px-2 py-1 bg-cyan-700 hover:bg-cyan-800 text-white rounded shadow text-xs font-bold transition"
+                className={
+                  `ml-2 flex items-center gap-1 pixel-border-thick bg-gradient-to-br from-cyan-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-bold shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 relative group ` +
+                  (isMobileHorizontal
+                    ? 'px-1.5 py-0.5 text-[10px] min-h-0 h-6'
+                    : 'px-3 py-1.5 text-xs')
+                }
                 onClick={onShowBrief}
                 title="Show previously selected question"
+                style={isMobileHorizontal ? { minWidth: 0, minHeight: 0, height: '1.5rem' } : {}}
               >
-                <FileText className="w-4 h-4 mr-1" /> Brief
+                <span className="absolute inset-0 bg-gradient-to-br from-white/10 to-cyan-400/10 opacity-0 group-hover:opacity-100 transition-opacity rounded" />
+                <FileText className={isMobileHorizontal ? "w-3 h-3 text-cyan-200 drop-shadow-sm" : "w-4 h-4 text-cyan-200 drop-shadow-sm"} />
+                <span className={
+                  `pixel-text tracking-wider text-cyan-100 drop-shadow ` +
+                  (isMobileHorizontal ? 'text-[10px]' : 'text-sm')
+                }>Brief</span>
               </button>
             )}
           </div>
