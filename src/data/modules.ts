@@ -8,3 +8,5 @@ export const modules: Module[] = [
   { id: "HL1", status: 'locked', title: 'Hackathon Level-1' },
   { id: "HL2", status: 'locked', title: 'Hackathon Level-2' },
 ];
+
+// available

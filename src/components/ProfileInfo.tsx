@@ -431,7 +431,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({
               )}
             </ul>
 
-            {hasMissingData && (
+            {/* hasMissingData && (
               <div className="w-full mb-4">
                 <p className="text-red-200 text-sm mb-2 text-center">Some information is missing from your profile.</p>
                 <button
@@ -441,7 +441,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({
                   Complete Profile
                 </button>
               </div>
-            )}
+            ) */}
           </>
         ) : (
           <div className="w-full space-y-4">

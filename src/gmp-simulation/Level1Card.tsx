@@ -739,6 +739,14 @@ const Level1Card: React.FC<Level1CardProps> = ({
             {/* Background Pattern */}
             <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
             <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
+            {/* Close Button */}
+            <button
+              onClick={() => setShowCautionModal(false)}
+              className="absolute top-2 right-2 z-20 bg-yellow-200 hover:bg-yellow-300 text-yellow-900 rounded-full p-1 shadow pixel-border"
+              aria-label="Close caution modal"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
             {/* Content */}
             <div className="relative z-10">
               <div className="flex items-center justify-center space-x-2 mb-4">
