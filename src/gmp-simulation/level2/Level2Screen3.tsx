@@ -239,6 +239,7 @@ const Level2Screen3: React.FC = () => {
   return (
     <>
       <div
+
         className={`min-h-screen bg-gray-800 relative flex flex-col compact-all${isMobileHorizontal ? ' compact-mobile-horizontal' : ''}`}
         style={{ fontFamily: 'Verdana, Geneva, Tahoma, sans-serif', fontSize: isMobileHorizontal ? '12px' : '13px', lineHeight: 1.2 }}
       >
