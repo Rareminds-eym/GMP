@@ -452,6 +452,7 @@ const Level2Screen3: React.FC = () => {
             isMobileHorizontal={isMobileHorizontal}
             selectedCase={selectedCase}
             onShowBrief={() => setShowBrief(true)}
+            progress={progress}
             timerStopped={isLevelCompleted}
           />
           

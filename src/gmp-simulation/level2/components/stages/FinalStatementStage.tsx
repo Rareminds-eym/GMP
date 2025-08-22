@@ -12,16 +12,16 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
   return (
     <div className={`${isMobileHorizontal ? 'space-y-3' : 'space-y-8'} animate-fadeIn`}>
       <div className={`text-center ${isMobileHorizontal ? 'mb-3' : 'mb-8'}`}>
-        <div className="pixel-border-thick bg-gradient-to-br from-indigo-900/30 to-purple-900/30 p-6 relative overflow-hidden">
+  <div className={`pixel-border-thick bg-gradient-to-br from-indigo-900/30 to-purple-900/30 ${isMobileHorizontal ? 'p-2' : 'p-6'} relative overflow-hidden`}>
           <div className="absolute inset-0 bg-pixel-pattern opacity-5"></div>
           <div className="relative z-10">
             <div className="flex items-center justify-center space-x-3 mb-4">
-              <div className="pixel-border bg-gradient-to-br from-indigo-500 to-purple-500 p-3 relative overflow-hidden">
-                <FileText className="w-8 h-8 text-white" />
+              <div className={`pixel-border bg-gradient-to-br from-indigo-500 to-purple-500 ${isMobileHorizontal ? 'p-1.5' : 'p-3'} relative overflow-hidden`}>
+                <FileText className={isMobileHorizontal ? 'w-5 h-5 text-white' : 'w-8 h-8 text-white'} />
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-500 blur-sm opacity-50 -z-10"></div>
               </div>
               <div>
-                <h2 className={`pixel-text ${isMobileHorizontal ? 'text-xl' : 'text-4xl'} font-black text-white mb-1`} style={{ textShadow: '3px 3px 0px rgba(0,0,0,0.7), 0 0 20px rgba(99,102,241,0.3)' }}>
+                <h2 className={`pixel-text ${isMobileHorizontal ? 'text-base' : 'text-4xl'} font-black text-white mb-1`} style={{ textShadow: '3px 3px 0px rgba(0,0,0,0.7), 0 0 20px rgba(99,102,241,0.3)' }}>
                   FINAL STATEMENT
                 </h2>
               </div>

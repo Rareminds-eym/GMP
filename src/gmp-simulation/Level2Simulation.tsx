@@ -262,40 +262,47 @@ const Level2Simulation: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-800 flex flex-col items-center justify-center p-2 relative">
         <div className="container mx-auto px-3 py-2">
-          <div className="flex items-center justify-between pixel-border bg-gradient-to-r from-gray-700 to-gray-600 px-2 py-1 mb-4">
-            {/* Left - Level and Case */}
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gray-700 pixel-border flex items-center justify-center">
-                <span className="text-gray-100 font-black text-sm pixel-text">2</span>
-              </div>
-              <div>
-                <h1 className="text-gray-100 font-black text-sm pixel-text">LEVEL 2</h1>
-                <div className="text-white text-xs font-bold bg-violet-600 px-3 py-1 rounded-lg">
-                  {isCaseSelection ? 'Case Selection' : `CASE ${currentQuestion + 1}/${totalQuestions}`}
+          {level2Screen !== 3 && (
+            <div className="flex items-center justify-between pixel-border bg-gradient-to-r from-gray-700 to-gray-600 px-2 py-1 mb-4">
+              {/* Left - Level and Case */}
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gray-700 pixel-border flex items-center justify-center">
+                  <span className="text-gray-100 font-black text-sm pixel-text">2</span>
+                </div>
+                <div>
+                  <h1 className="text-gray-100 font-black text-sm pixel-text">LEVEL 2</h1>
+                  <div className="text-white text-xs font-bold bg-violet-600 px-3 py-1 rounded-lg">
+                    {isCaseSelection ? 'Case Selection' : `CASE ${currentQuestion + 1}/${totalQuestions}`}
+                  </div>
                 </div>
               </div>
-            </div>
-            {/* Right - Progress and Timer */}
-            <div className="flex items-center gap-4">
-              {/* Progress Bar */}
-              <div className="flex items-center gap-1">
-                <div className="w-16 h-2 bg-gray-800 pixel-border overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500"
-                    style={{ width: `${progress}%` }}
+              {/* Right - Progress and Timer */}
+              <div className="flex items-center gap-4">
+                {/* Progress Bar */}
+                <div className="flex items-center gap-1">
+                  {/* <div className="w-16 h-2 bg-gray-800 pixel-border overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div> */}
+                  {/* <span className="text-white text-xs font-black min-w-[2rem] pixel-text">
+                    {Math.round(progress)}%
+                  </span> */}
+                  {/* <div className="w-3 h-3 bg-yellow-600 pixel-border flex items-center justify-center">
+                    <svg className="w-2 h-2 text-yellow-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 17.75L18.2 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.44 4.73L5.8 21z" /></svg>
+                  </div> */}
+                </div>
+                {/* Timer */}
+                <div className="flex items-center gap-1 pixel-border bg-gradient-to-r from-red-700 to-red-600 px-2 py-1">
+                  <div className="w-3 h-3 bg-gray-800 pixel-border flex items-center justify-center">
+                    <Clock className="w-2 h-2 text-gray-300" />
+                  </div>
+                  <Level2Timer
+                    initialTime={INITIAL_TIME}
+                    isActive={timerActive}
+                    onTimeUp={() => setTimerActive(false)}
                   />
-                </div>
-                <span className="text-white text-xs font-black min-w-[2rem] pixel-text">
-                  {Math.round(progress)}%
-                </span>
-                <div className="w-3 h-3 bg-yellow-600 pixel-border flex items-center justify-center">
-                  <svg className="w-2 h-2 text-yellow-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 17.75L18.2 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.44 4.73L5.8 21z" /></svg>
-                </div>
-              </div>
-              {/* Timer */}
-              <div className="flex items-center gap-1 pixel-border bg-gradient-to-r from-red-700 to-red-600 px-2 py-1">
-                <div className="w-3 h-3 bg-gray-800 pixel-border flex items-center justify-center">
-                  <Clock className="w-2 h-2 text-gray-300" />
                 </div>
                 <Level2Timer
                   initialTime={INITIAL_TIME}
@@ -305,7 +312,7 @@ const Level2Simulation: React.FC = () => {
                 />
               </div>
             </div>
-          </div>
+          )}
         </div>
         <div className="relative w-full">
           <Level2Card
