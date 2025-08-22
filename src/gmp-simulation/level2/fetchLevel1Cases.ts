@@ -34,13 +34,11 @@ export async function fetchLevel1CasesForTeam(teamMembers: { email: string }[]):
       .eq('module_number', 5)
       .order('question_index', { ascending: true })
       .limit(5);
-    console.log(`[fetchLevel1CasesForTeam] Supabase fetch for ${member.email}:`, { data, error });
     if (error) {
       console.error('Error fetching attempt_details for', member.email, error);
       continue;
     }
     if (data && Array.isArray(data)) {
-      console.log(`[fetchLevel1CasesForTeam] Supabase cases for ${member.email}:`, data);
       for (const attempt of data) {
         // Track used case IDs (from hackathonData)
         let qid = undefined;
@@ -90,7 +88,6 @@ export async function fetchLevel1CasesForTeam(teamMembers: { email: string }[]):
     }
     usedCaseIds.add(randomCase.id);
     allCases.push({ member, attempt });
-    console.log('[fetchLevel1CasesForTeam] Added random hackathonData case:', { member, attempt });
     memberIdx++;
   }
 
@@ -109,6 +106,5 @@ export async function fetchLevel1CasesForTeam(teamMembers: { email: string }[]):
       if (grouped[j][i]) ordered.push(grouped[j][i]);
     }
   }
-  console.log('[fetchLevel1CasesForTeam] Final ordered cases:', ordered);
   return ordered;
 }
