@@ -240,7 +240,7 @@ const Level2Screen3: React.FC = () => {
     <>
       <div
         className={`min-h-screen bg-gray-800 relative flex flex-col compact-all${isMobileHorizontal ? ' compact-mobile-horizontal' : ''}`}
-        style={{ fontFamily: 'Verdana, Geneva, Tahoma, sans-serif', fontSize: isMobileHorizontal ? '12px' : '13px', lineHeight: 1.2, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
+        style={{ fontFamily: 'Verdana, Geneva, Tahoma, sans-serif', fontSize: isMobileHorizontal ? '12px' : '13px', lineHeight: 1.2 }}
       >
         {/* Background Pattern */}
         <div className="fixed inset-0 bg-pixel-pattern opacity-10"></div>
@@ -311,11 +311,19 @@ const Level2Screen3: React.FC = () => {
           />
 
           {/* Level Completion Popup */}
-          <LevelCompletionPopup
-            show={showCompletionPopup && stage === 9}
-            onContinue={() => navigate('/modules')}
-            message="Congratulations! You have completed all stages of Level 2."
-          />
+         <LevelCompletionPopup
+  show={showCompletionPopup && stage === 9}
+  onContinue={() => navigate('/modules')}
+  message={
+    <>
+      Congratulations! You have completed all stages of Level 2.
+      <br />
+      The results will be announced via email, and you can also check them on our website: <a href="https://rareminds.in" target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8', textDecoration: 'underline' }}>rareminds.in</a>
+    </>
+  }
+  
+/>
+
         </div>
       </div>
     </>
