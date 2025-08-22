@@ -50,6 +50,7 @@ const Level2Simulation: React.FC = () => {
   const totalQuestions = 5; // Adjust if dynamic
   const INITIAL_TIME = 10800;
   const [timerActive, setTimerActive] = useState(false);
+  const [timerValue, setTimerValue] = useState(INITIAL_TIME);
   useEffect(() => {
     console.log('[Level2Simulation][DEBUG] hideProgress state changed:', hideProgress);
   }, [hideProgress]);
@@ -98,6 +99,7 @@ const Level2Simulation: React.FC = () => {
   // Fetch team members from attempt_details table using user's email (find team_name, then all members with that team_name)
   useEffect(() => {
     async function fetchTeamMembers() {
+      console.log('[Level2Simulation][DEBUG] fetchTeamMembers called with email:', email);
       if (!email) {
         console.warn('[Level2Simulation][DEBUG] No email found for logged-in user.');
         return;
@@ -121,17 +123,17 @@ const Level2Simulation: React.FC = () => {
       // Now, get all members with this team_name
       const { data, error } = await supabase
         .from('attempt_details')
-        .select('email, name, full_name')
+        .select('email')
         .eq('team_name', teamName);
       console.log('[Level2Simulation][DEBUG] attempt_details fetch result for team_name:', { data, error });
       if (data && Array.isArray(data)) {
         // Remove duplicate emails (one per member)
         const uniqueMembers = Object.values(
-          data.reduce((acc: Record<string, { email: string; name?: string; full_name?: string }>, curr) => {
+          data.reduce((acc: Record<string, { email: string }>, curr) => {
             acc[curr.email] = curr;
             return acc;
-          }, {} as Record<string, { email: string; name?: string; full_name?: string }>));
-        setTeamMembers(uniqueMembers as { email: string; name?: string; full_name?: string }[]);
+          }, {} as Record<string, { email: string }>));
+        setTeamMembers(uniqueMembers as { email: string }[]);
         console.log('[Level2Simulation][DEBUG] Loaded teamMembers from attempt_details:', uniqueMembers);
       } else {
         setTeamMembers([]);
@@ -235,8 +237,9 @@ const Level2Simulation: React.FC = () => {
   // (already declared at the top with other hooks)
   // ---
   if (showLevel2Card) {
-    const progress = ((currentQuestion + 1) / totalQuestions) * 100;
-    const isCaseSelection = level2Screen === 1 && showLevel2Card;
+  const progress = ((currentQuestion + 1) / totalQuestions) * 100;
+  const isCaseSelection = level2Screen === 1 && showLevel2Card;
+  // ...existing code...
     // Loader overlay at top level
     if (hideProgress) {
       return (
@@ -301,6 +304,12 @@ const Level2Simulation: React.FC = () => {
                     onTimeUp={() => setTimerActive(false)}
                   />
                 </div>
+                <Level2Timer
+                  initialTime={INITIAL_TIME}
+                  isActive={timerActive}
+                  onTimeUp={() => setTimerActive(false)}
+                  onTick={setTimerValue}
+                />
               </div>
             </div>
           )}
@@ -311,6 +320,7 @@ const Level2Simulation: React.FC = () => {
             teamMembers={teamMembers}
             screen={level2Screen}
             onAdvanceScreen={handleAdvanceScreen}
+            timer={timerValue}
           />
           {/* Countdown overlay for screen 1 */}
           {isCaseSelection && showCountdown && (
@@ -386,6 +396,14 @@ const Level2Simulation: React.FC = () => {
         <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
           <button
             onClick={() => {
+              // Set session_id and email in sessionStorage if available
+              if (session_id && email) {
+                window.sessionStorage.setItem('session_id', session_id);
+                window.sessionStorage.setItem('email', email);
+                console.log('[DEBUG] Set session_id and email in sessionStorage:', session_id, email);
+              } else {
+                console.warn('[DEBUG] session_id or email missing, not set in sessionStorage');
+              }
               setShowCountdown(true);
               setCountdownNumber(3);
               setTimerActive(false); // Ensure timer is not running during countdown

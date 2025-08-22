@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { supabase } from "../../lib/supabase";
 import ConfirmModal from "./ui/ConfirmModal";
 import { CheckCircle, Search, Target, AlertTriangle } from "lucide-react";
 import {
@@ -20,6 +21,7 @@ import { Question } from "../HackathonData";
 interface Level2SolutionCardProps {
   question: Question;
   onProceedConfirmed?: () => void;
+  timer: number;
 }
 
 // Draggable Item Component (single solution)
@@ -81,7 +83,69 @@ const DroppableZone: React.FC<DroppableZoneProps> = ({ id, selectedItem, childre
 };
 
 
-const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onProceedConfirmed }) => {
+const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onProceedConfirmed, timer }) => {
+  // TODO: Replace with actual session_id, email, and module_number from context/auth
+  let session_id = window.sessionStorage.getItem('session_id') || "";
+  let email = window.sessionStorage.getItem('email') || "";
+
+  // If session_id or email missing, try to fetch from winners_list_l1
+  useEffect(() => {
+    async function fetchAndSetUserFromWinnersList() {
+      if (session_id && email) {
+        console.log('[DEBUG] On mount: session_id:', session_id, 'email:', email);
+        return;
+      }
+      // Try to get from winners_list_l1 using another identifier (e.g., localStorage, or prompt user)
+      // For demo, try to get by email prompt if not set
+      let userEmail = email;
+      if (!userEmail) {
+        userEmail = window.prompt('Enter your email to continue:') || "";
+      }
+      if (!userEmail) {
+        console.warn('[DEBUG] No email provided, cannot fetch user.');
+        return;
+      }
+      // Fetch from Supabase
+      const { data, error } = await supabase
+        .from('winners_list_l1')
+        .select('session_id,email')
+        .eq('email', userEmail)
+        .single();
+      if (error || !data) {
+        console.error('[DEBUG] Could not fetch user from winners_list_l1:', error?.message);
+        return;
+      }
+      if (data.session_id && data.email) {
+        window.sessionStorage.setItem('session_id', data.session_id);
+        window.sessionStorage.setItem('email', data.email);
+        session_id = data.session_id;
+        email = data.email;
+        console.log('[DEBUG] Set session_id and email from winners_list_l1:', session_id, email);
+        // Optionally, reload the page or re-render state
+        window.location.reload();
+      }
+    }
+    fetchAndSetUserFromWinnersList();
+  }, []);
+  const module_number = 6; // or get from props/context if dynamic
+  const question_index = 0; // always 0 for this table
+
+  // Fetch saved solution on mount
+  useEffect(() => {
+    const fetchSavedSolution = async () => {
+      if (!session_id || !email) return;
+      const { data, error } = await supabase
+        .from('selected_solution')
+        .select('solution')
+        .eq('session_id', session_id)
+        .eq('email', email)
+        .eq('module_number', module_number)
+        .single();
+      if (data && data.solution) setSelectedSolution(data.solution);
+    };
+    fetchSavedSolution();
+    // eslint-disable-next-line
+  }, [session_id, email, module_number]);
   const { isMobile, isHorizontal } = useDeviceLayout();
   const isMobileHorizontal = isMobile && isHorizontal;
   const [selectedSolution, setSelectedSolution] = useState("");
@@ -151,6 +215,49 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
     }
   };
 
+  // Save selected solution to Supabase
+  const saveSelectedSolution = async (solution: string) => {
+    console.log('[DEBUG] Attempting to save selected solution:', {
+      session_id,
+      email,
+      module_number,
+      question_index,
+      solution,
+      correctSolution: question.correctSolution
+    });
+    if (!session_id || !email) {
+      console.warn('[DEBUG] Missing session_id or email, aborting save.');
+      return;
+    }
+    const is_correct = solution === question.correctSolution;
+    const score = is_correct ? 40 : 0;
+    const { data, error } = await supabase
+      .from('selected_solution')
+      .upsert([
+        {
+          session_id,
+          email,
+          module_number,
+          question_index,
+          solution,
+          is_correct,
+          score,
+          timer: timer,
+        },
+      ], { onConflict: 'session_id,email,module_number' });
+    if (error) {
+      console.error('[DEBUG] Error saving selected solution:', error.message, error.details);
+    } else {
+      console.log('[DEBUG] Save successful. Supabase response:', data);
+    }
+  };
+
+  // Call save on confirm
+  const handleProceed = () => {
+    saveSelectedSolution(selectedSolution);
+    if (typeof onProceedConfirmed === 'function') onProceedConfirmed();
+  };
+
   return (
     <DndContext
       sensors={sensors}
@@ -198,14 +305,15 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
           </div>
         )}
 
-        {/* Main Content (matches Level 1) */}
+
+        {/* Main Content - Match Level 1 UI for first two columns */}
         <div className="relative z-10 flex-1 flex p-2 space-x-3 min-h-0">
-          {/* OPTIONS AREA - Left Panel */}
-          <div className="w-1/3 flex-shrink-0 flex flex-col min-h-0">
-            <div className="pixel-border-thick bg-gray-800 p-4 flex-1 overflow-hidden flex flex-col min-h-0 relative">
-              <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
-              <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
-              <div className="relative z-10 flex flex-col h-full min-h-0">
+          {/* OPTIONS AREA - Left Panel (matches Level 1) */}
+          <div className="w-1/3 flex-shrink-0 flex flex-col min-h-0 z-30">
+            <div className="pixel-border-thick bg-gray-800 p-4 flex-1 overflow-hidden flex flex-col min-h-0 relative z-30">
+              <div className="absolute inset-0 bg-pixel-pattern opacity-10 z-10"></div>
+              <div className="absolute inset-0 bg-scan-lines opacity-20 z-10"></div>
+              <div className="relative z-20 flex flex-col h-full min-h-0">
                 <div className="flex items-center space-x-2 mb-3 flex-shrink-0">
                   <div className="w-6 h-6 bg-cyan-500 pixel-border flex items-center justify-center">
                     <CheckCircle className="w-4 h-4 text-cyan-900" />
@@ -238,7 +346,7 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
             </div>
           </div>
 
-          {/* DND DROP ZONE - Middle Panel */}
+          {/* DND DROP ZONE - Middle Panel (matches Level 1) */}
           <div className="flex-1 animate-slideIn flex flex-col min-h-0">
             <div className="pixel-border-thick bg-gradient-to-br from-cyan-900 to-cyan-800 h-full relative overflow-hidden transition-all duration-300 rounded-lg flex flex-col">
               {/* Header */}
@@ -259,7 +367,7 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
               <div className="px-3 pb-3 flex-1 min-h-0 overflow-y-auto relative z-10">
                 <DroppableZone id="solution-zone" selectedItem={selectedSolution}>
                   {selectedSolution ? (
-                    <div className="h-full flex flex-col items-center justify-center">
+                    <div className="h-full flex flex-col">
                       <div className="text-center py-2 border-b border-cyan-700/30">
                         <div className="w-8 h-8 bg-cyan-800 pixel-border mx-auto mb-1 flex items-center justify-center animate-pulse">
                           <CheckCircle className="w-5 h-5 text-cyan-300" />
@@ -280,26 +388,33 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
                           </div>
                         </div>
                       </div>
-                      {/* Proceed Button */}
-                      <button
-                        className="mt-4 px-6 py-3 pixel-border bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-black pixel-text text-sm rounded transition-all duration-200 shadow-lg"
-                        style={{ minWidth: 120 }}
-                        disabled={!selectedSolution}
-                        onClick={() => setShowConfirm(true)}
-                      >
-                        PROCEED
-                      </button>
-                      <ConfirmModal
-                        open={showConfirm}
-                        onClose={() => setShowConfirm(false)}
-                        onConfirm={() => {
-                          setShowConfirm(false);
-                          if (typeof onProceedConfirmed === 'function') onProceedConfirmed();
-                        }}
-                        confirmText="CONFIRM & PROCEED"
-                        title="Proceed to Next Step?"
-                        message="Are you sure you want to submit this solution? This action cannot be undone."
-                      />
+                      {/* Proceed Button - Fixed Position */}
+                      <></>
+      {/* Proceed Button - Fixed to bottom right of the screen */}
+      <div className="fixed bottom-4 right-4 z-50">
+        <button
+          className={`flex items-center space-x-2 px-6 py-3 pixel-border font-black pixel-text transition-all shadow-lg ${selectedSolution
+            ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white transform hover:scale-105"
+            : "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
+          }`}
+          style={{ minWidth: 120 }}
+          disabled={!selectedSolution}
+          onClick={() => setShowConfirm(true)}
+        >
+          <span className="text-sm">PROCEED</span>
+        </button>
+        <ConfirmModal
+          open={showConfirm}
+          onClose={() => setShowConfirm(false)}
+          onConfirm={() => {
+            setShowConfirm(false);
+            handleProceed();
+          }}
+          confirmText="CONFIRM & PROCEED"
+          title="Proceed to Next Step?"
+          message="Are you sure you want to submit this solution? This action cannot be undone."
+        />
+      </div>
                     </div>
                   ) : (
                     <div className="text-center py-8">
@@ -315,7 +430,7 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
             </div>
             <DragOverlay dropAnimation={null}>
               {activeItem ? (
-                <div className="pixel-border bg-gradient-to-r from-cyan-500 to-blue-500 p-2 cursor-grabbing transform scale-110 opacity-95 shadow-2xl pointer-events-none">
+                <div className="pixel-border bg-gradient-to-r from-cyan-500 to-blue-500 p-2 cursor-grabbing opacity-95 shadow-2xl pointer-events-none">
                   <span className="text-white text-xs font-bold pixel-text">{activeItem.text}</span>
                 </div>
               ) : null}

@@ -68,30 +68,31 @@ const Level2Screen1_CaseSelection: React.FC<Level2Screen1Props> = ({
   // Helper to save selected case to Supabase
   const handleSaveSelectedCase = async (_email: string, attemptOrCaseId: number | AttemptDetail) => {
     try {
+      console.log('[handleSaveSelectedCase] attemptOrCaseId:', attemptOrCaseId);
       // Always resolve the hackathonData id, prefer attempt.hackathon_id if present
       let hackathonId: number | undefined;
       if (typeof attemptOrCaseId === 'number') {
         hackathonId = hackathonData.find(q => q.id === attemptOrCaseId)?.id;
+      } else if ('hackathon_id' in attemptOrCaseId && typeof attemptOrCaseId.hackathon_id === 'number' && attemptOrCaseId.hackathon_id > 0) {
+        // Use hackathon_id directly if present and valid (from DB row)
+        hackathonId = attemptOrCaseId.hackathon_id;
       } else {
-        // Prefer hackathon_id if present
-        if ('hackathon_id' in attemptOrCaseId && attemptOrCaseId.hackathon_id) {
-          hackathonId = attemptOrCaseId.hackathon_id;
-        } else {
-          // Fallback to extracting from question
-          let qid: number | undefined;
-          if (typeof attemptOrCaseId.question === 'object' && attemptOrCaseId.question.id) {
-            qid = attemptOrCaseId.question.id;
-          } else if (typeof attemptOrCaseId.question === 'string') {
-            try {
-              const parsed = JSON.parse(attemptOrCaseId.question);
-              if (parsed && parsed.id) qid = parsed.id;
-            } catch {}
+        // Fallback to extracting from question
+        let qid: number | undefined;
+        if (typeof attemptOrCaseId.question === 'object' && attemptOrCaseId.question.id) {
+          qid = attemptOrCaseId.question.id;
+        } else if (typeof attemptOrCaseId.question === 'string') {
+          try {
+            const parsed = JSON.parse(attemptOrCaseId.question);
+            if (parsed && parsed.id) qid = parsed.id;
+          } catch (e) {
+            console.warn('[handleSaveSelectedCase] Failed to parse question string:', attemptOrCaseId.question, e);
           }
-          if (qid) hackathonId = hackathonData.find(q => q.id === qid)?.id;
         }
+        if (qid) hackathonId = hackathonData.find(q => q.id === qid)?.id;
       }
       if (!hackathonId) {
-        console.error('[handleSaveSelectedCase] Could not resolve hackathonData id for selected case', { attemptOrCaseId });
+        console.error('[handleSaveSelectedCase] Could not resolve hackathonData id for selected case', { attemptOrCaseId, hackathonDataIds: hackathonData.map(q => q.id) });
         throw new Error('Could not resolve hackathonData id for selected case');
       }
       const {
@@ -226,7 +227,9 @@ const Level2Screen1_CaseSelection: React.FC<Level2Screen1Props> = ({
                   onClose={() => setModalCase(null)}
                   onConfirm={() => {
                     if (modalCase) {
-                      setConfirmModal({ open: true, email: modalCase.member.email, caseId: modalCase.attempt.id });
+                      // Use attempt.hackathon_id if present, else fallback to attempt.question.id
+                      const hackathonId = (modalCase.attempt as any).hackathon_id ?? (typeof modalCase.attempt.question === 'object' ? modalCase.attempt.question.id : undefined);
+                      setConfirmModal({ open: true, email: modalCase.member.email, caseId: hackathonId });
                       setModalCase(null);
                     }
                   }}
@@ -268,7 +271,9 @@ const Level2Screen1_CaseSelection: React.FC<Level2Screen1Props> = ({
             onConfirm={() => {
               if (confirmModal.email && confirmModal.caseId !== null) {
                 onSelectCase(confirmModal.email, confirmModal.caseId);
-                handleSaveSelectedCase(confirmModal.email, modalCase?.attempt ?? confirmModal.caseId);
+                // Always pass hackathon_id, not attempt.id
+                const hackathonId = (modalCase?.attempt as any)?.hackathon_id ?? (typeof modalCase?.attempt?.question === 'object' ? modalCase.attempt.question.id : confirmModal.caseId);
+                handleSaveSelectedCase(confirmModal.email, hackathonId);
                 setConfirmModal({ open: false, email: null, caseId: null });
                 onContinue();
                 return;
@@ -300,7 +305,9 @@ const Level2Screen1_CaseSelection: React.FC<Level2Screen1Props> = ({
                 const { member, attempt } = allCases[mobileCaseIndex];
                 setMobileCaseIndex(null); // Close modal before opening confirm
                 setTimeout(() => {
-                  setConfirmModal({ open: true, email: member.email, caseId: attempt.id });
+                  // Use attempt.hackathon_id if present, else fallback to attempt.question.id
+                  const hackathonId = (attempt as any).hackathon_id ?? (typeof attempt.question === 'object' ? attempt.question.id : undefined);
+                  setConfirmModal({ open: true, email: member.email, caseId: hackathonId });
                 }, 0);
               }}
               onPrev={mobileCaseIndex > 0 ? () => setMobileCaseIndex(mobileCaseIndex - 1) : undefined}
