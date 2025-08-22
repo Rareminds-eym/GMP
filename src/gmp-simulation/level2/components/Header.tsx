@@ -1,0 +1,81 @@
+import React from 'react';
+import { Award, ChevronRight, FileText } from 'lucide-react';
+import { HeaderProps } from '../types';
+import Timer from './Timer';
+
+const Header: React.FC<HeaderProps> = ({ currentStageData, isMobileHorizontal, selectedCase, onShowBrief }) => {
+  return (
+    <div className={isMobileHorizontal ? 'mb-3' : 'mb-6'}>
+      <div 
+        className={`pixel-border-thick bg-gradient-to-br ${currentStageData.bgColor} relative overflow-hidden ${isMobileHorizontal ? 'p-1.5' : 'p-6'}`}
+        style={{
+          background: `linear-gradient(135deg, rgba(6,182,212,0.15) 0%, rgba(37,99,235,0.15) 100%), linear-gradient(135deg, #0f172a 0%, #1e293b 100%)`
+        }}
+      >
+        <div className="absolute inset-0 bg-pixel-pattern opacity-5"></div>
+        <div className="absolute inset-0 bg-scan-lines opacity-10"></div>
+        
+        {/* Animated Background Effects */}
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent animate-pulse opacity-50"></div>
+        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent animate-pulse opacity-30" style={{ animationDelay: '0.5s' }}></div>
+
+        <div className={`relative z-10 flex items-center justify-between`}>
+          {/* Left: Icon and Title */}
+          <div className={`flex items-center ${isMobileHorizontal ? 'space-x-0.5' : 'space-x-4'}`}>
+            <div 
+              className={`pixel-border-thick bg-gradient-to-br ${currentStageData.color} flex items-center justify-center ${isMobileHorizontal ? 'p-0.5' : 'p-4'} relative overflow-hidden group`}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <currentStageData.icon className={`${isMobileHorizontal ? 'w-4 h-4' : 'w-10 h-10'} text-white relative z-10 drop-shadow-lg`} />
+              {/* Glow effect */}
+              <div className={`absolute inset-0 bg-gradient-to-br ${currentStageData.color} blur-sm opacity-50 -z-10`}></div>
+            </div>
+            <div className="flex flex-col items-start">
+              <div className="flex items-center space-x-1 mb-0.5">
+                <h1 className={`pixel-text ${isMobileHorizontal ? 'text-xs' : 'text-2xl'} font-black text-white`} 
+                    style={{ textShadow: isMobileHorizontal ? '1.5px 1.5px 0px rgba(0,0,0,0.7), 0 0 6px rgba(6,182,212,0.3)' : '3px 3px 0px rgba(0,0,0,0.7), 0 0 20px rgba(6,182,212,0.3)' }}>
+                  INNOVATION QUEST
+                </h1>
+                <Award className={`${isMobileHorizontal ? 'w-3 h-3' : 'w-6 h-6'} text-yellow-400 animate-pulse`} />
+              </div>
+              {/* Case number below heading */}
+              <span className={`pixel-text font-bold text-cyan-200 ${isMobileHorizontal ? 'text-[10px]' : 'text-xs'} mt-0.5`}>
+                {currentStageData && currentStageData.caseNumber ? `${currentStageData.caseNumber}/9` : ''}
+              </span>
+            </div>
+          </div>
+          {/* Right: Timer and then Brief Button */}
+          <div className="flex items-center space-x-2">
+            <div className={isMobileHorizontal ? 'mr-1' : 'mr-4'}>
+              <Timer isMobileHorizontal={isMobileHorizontal} />
+            </div>
+            {selectedCase && onShowBrief && (
+              <button
+                className={
+                  `ml-2 flex items-center justify-center gap-1 pixel-border-thick bg-gradient-to-br from-cyan-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-bold shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 relative group ` +
+                  (isMobileHorizontal
+                    ? 'px-1.5 py-0.5 text-[10px] min-h-0 h-6'
+                    : 'px-3 py-1.5 text-xs')
+                }
+                onClick={onShowBrief}
+                title="Show previously selected question"
+                style={isMobileHorizontal ? { minWidth: 0, minHeight: 0, height: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' } : { display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <span className="absolute inset-0 bg-gradient-to-br from-white/10 to-cyan-400/10 opacity-0 group-hover:opacity-100 transition-opacity rounded" />
+                <span className="flex items-center justify-center">
+                  <FileText className={isMobileHorizontal ? "w-3 h-3 text-cyan-200 drop-shadow-sm" : "w-4 h-4 text-cyan-200 drop-shadow-sm"} />
+                </span>
+                <span className={
+                  `pixel-text tracking-wider text-cyan-100 drop-shadow flex items-center ` +
+                  (isMobileHorizontal ? 'text-[10px]' : 'text-sm')
+                }>Brief</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Header;
