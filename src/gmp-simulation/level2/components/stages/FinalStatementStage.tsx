@@ -51,7 +51,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
               <div className="relative z-10 text-lg text-white leading-relaxed font-bold">
                 <span className="text-indigo-300 font-black">"Our innovation solves </span>
                 <input
-                  className="inline-block text-red-400 font-black bg-red-900/30 px-2 py-1 w-40 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-red-400"
+                  className="inline-block text-red-400 font-black bg-red-900/30 px-2 py-1 w-40 mx-1 rounded border-0 border-b-2 border-dashed border-red-400 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-red-300 placeholder:text-red-200/80 placeholder:italic cursor-text"
                   type="text"
                   value={formData.finalProblem ?? ''}
                   onChange={handleChange('finalProblem')}
@@ -59,7 +59,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
                 />
                 <span className="text-indigo-300 font-black"> by using </span>
                 <input
-                  className="inline-block text-blue-400 font-black bg-blue-900/30 px-2 py-1 w-32 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="inline-block text-blue-400 font-black bg-blue-900/30 px-2 py-1 w-32 mx-1 rounded border-0 border-b-2 border-dashed border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-300 placeholder:text-blue-200/80 placeholder:italic cursor-text"
                   type="text"
                   value={formData.finalTechnology ?? ''}
                   onChange={handleChange('finalTechnology')}
@@ -67,7 +67,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
                 />
                 <span className="text-indigo-300 font-black">, built with </span>
                 <input
-                  className="inline-block text-green-400 font-black bg-green-900/30 px-2 py-1 w-32 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-green-400"
+                  className="inline-block text-green-400 font-black bg-green-900/30 px-2 py-1 w-32 mx-1 rounded border-0 border-b-2 border-dashed border-green-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-300 placeholder:text-green-200/80 placeholder:italic cursor-text"
                   type="text"
                   value={formData.finalCollaboration ?? ''}
                   onChange={handleChange('finalCollaboration')}
@@ -75,7 +75,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
                 />
                 <span className="text-indigo-300 font-black">, adding </span>
                 <input
-                  className="inline-block text-purple-400 font-black bg-purple-900/30 px-2 py-1 w-32 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  className="inline-block text-purple-400 font-black bg-purple-900/30 px-2 py-1 w-32 mx-1 rounded border-0 border-b-2 border-dashed border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-300 placeholder:text-purple-200/80 placeholder:italic cursor-text"
                   type="text"
                   value={formData.finalCreativity ?? ''}
                   onChange={handleChange('finalCreativity')}
@@ -83,7 +83,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
                 />
                 <span className="text-indigo-300 font-black">. It can grow with </span>
                 <input
-                  className="inline-block text-orange-400 font-black bg-orange-900/30 px-2 py-1 w-32 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="inline-block text-orange-400 font-black bg-orange-900/30 px-2 py-1 w-32 mx-1 rounded border-0 border-b-2 border-dashed border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-300 placeholder:text-orange-200/80 placeholder:italic cursor-text"
                   type="text"
                   value={formData.finalSpeedScale ?? ''}
                   onChange={handleChange('finalSpeedScale')}
@@ -91,7 +91,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
                 />
                 <span className="text-indigo-300 font-black"> and will create </span>
                 <input
-                  className="inline-block text-teal-400 font-black bg-teal-900/30 px-2 py-1 w-32 mx-1 rounded focus:outline-none focus:ring-2 focus:ring-teal-400"
+                  className="inline-block text-teal-400 font-black bg-teal-900/30 px-2 py-1 w-32 mx-1 rounded border-0 border-b-2 border-dashed border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-300 placeholder:text-teal-200/80 placeholder:italic cursor-text"
                   type="text"
                   value={formData.finalImpact ?? ''}
                   onChange={handleChange('finalImpact')}
