@@ -39,7 +39,6 @@ const Header: React.FC<HeaderProps> = ({ currentStageData, isMobileHorizontal, s
                     style={{ textShadow: isMobileHorizontal ? '1.5px 1.5px 0px rgba(0,0,0,0.7), 0 0 6px rgba(6,182,212,0.3)' : '3px 3px 0px rgba(0,0,0,0.7), 0 0 20px rgba(6,182,212,0.3)' }}>
                   INNOVATION QUEST
                 </h1>
-                <span className={`${isMobileHorizontal ? 'w-3 h-3' : 'w-6 h-6'} text-yellow-400 animate-pulse`}>🏆</span>
               </div>
               {/* Case number below heading */}
               <span className={"text-white text-xs font-bold bg-violet-600 px-3 py-1 rounded-lg"}>
@@ -95,7 +94,7 @@ const Header: React.FC<HeaderProps> = ({ currentStageData, isMobileHorizontal, s
           </div>
         </div>
       </div>
-    // </div>
+    </div>
   );
 };
 

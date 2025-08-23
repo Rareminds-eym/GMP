@@ -1,11 +1,37 @@
-import React from 'react';
-import { Upload, CheckCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Upload, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 import { StageProps } from '../../types';
+import { uploadFileToS3 } from '../../../../utils/awsConfig';
 
 const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMobileHorizontal }) => {
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [s3Url, setS3Url] = useState<string | null>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      onFormDataChange('file', e.target.files[0]);
+      const file = e.target.files[0];
+      setIsUploading(true);
+      setUploadError(null);
+      
+      try {
+        // Upload to S3
+        const s3Location = await uploadFileToS3(file);
+        setS3Url(s3Location);
+        
+        // Also update form data with the file
+        onFormDataChange('file', file);
+        
+        console.log('File uploaded successfully to S3:', s3Location);
+      } catch (error) {
+        console.error('S3 upload failed:', error);
+        setUploadError('Failed to upload file to cloud storage. Please try again.');
+        
+        // Still update form data with local file for UI purposes
+        onFormDataChange('file', file);
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -59,12 +85,40 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
                     onChange={handleFileChange}
                   />
                   <div 
-                    className="pixel-border inline-flex items-center px-6 py-3 bg-gradient-to-r from-pink-500 to-yellow-500 hover:from-pink-600 hover:to-yellow-600 text-white transition-colors duration-300 font-black shadow-lg"
+                    className={`pixel-border inline-flex items-center px-6 py-3 bg-gradient-to-r from-pink-500 to-yellow-500 hover:from-pink-600 hover:to-yellow-600 text-white transition-colors duration-300 font-black shadow-lg ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
-                    <Upload className="w-5 h-5 mr-2" />
-                    SELECT FILE
+                    {isUploading ? (
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    ) : (
+                      <Upload className="w-5 h-5 mr-2" />
+                    )}
+                    {isUploading ? 'UPLOADING...' : 'SELECT FILE'}
                   </div>
                 </label>
+                {/* Upload Error Display */}
+                {uploadError && (
+                  <div 
+                    className={`pixel-border mt-4 bg-red-900/30 relative overflow-hidden ${isMobileHorizontal ? 'p-3' : 'p-4'}`}
+                  >
+                    <div className="absolute inset-0 opacity-20">
+                      <div className="absolute inset-0" style={{
+                        backgroundImage: `repeating-linear-gradient(
+                          45deg,
+                          transparent,
+                          transparent 4px,
+                          rgba(255,0,0,0.1) 4px,
+                          rgba(255,0,0,0.1) 8px
+                        )`
+                      }}></div>
+                    </div>
+                    <div className="relative z-10">
+                      <AlertCircle className="w-6 h-6 text-red-400 mx-auto mb-2" />
+                      <p className="text-red-300 text-sm font-bold text-center">{uploadError}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Success Display */}
                 {formData.file && (
                   <div 
                     className={`pixel-border mt-4 bg-green-900/30 relative overflow-hidden ${isMobileHorizontal ? 'p-3' : 'p-4'}`}
@@ -83,14 +137,25 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
                     <div className="relative z-10">
                       <CheckCircle className="w-6 h-6 text-green-400 mx-auto mb-2" />
                       <span className="text-green-400 font-black">{formData.file.name}</span>
-                      <p className="text-green-300 text-sm mt-1 font-bold">FILE UPLOAD SUCCESSFUL</p>
+                      <p className="text-green-300 text-sm mt-1 font-bold">
+                        {s3Url ? 'FILE UPLOADED TO CLOUD STORAGE' : 'FILE SELECTED (UPLOAD FAILED)'}
+                      </p>
+                      {s3Url && (
+                        <p className="text-green-200 text-xs mt-1 break-all">
+                          URL: {s3Url}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
                 
                 {/* Progress Indicator */}
                 <div className="absolute top-2 right-2">
-                  {formData.file ? (
+                  {isUploading ? (
+                    <div className="flex items-center space-x-1">
+                      <Loader2 className="w-4 h-4 text-yellow-400 animate-spin" />
+                    </div>
+                  ) : formData.file ? (
                     <div className="flex items-center space-x-1">
                       <CheckCircle className="w-4 h-4 text-green-400" />
                     </div>
