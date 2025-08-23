@@ -10,6 +10,7 @@ export interface StageData {
 }
 
 export interface StageFormData {
+  ideaStatement: string;
   problem: string;
   technology: string;
   collaboration: string;

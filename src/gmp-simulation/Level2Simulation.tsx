@@ -1,11 +1,10 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
-import { useGameSession } from "./useGameSession";
-import Level2Card from "./Level2Card";
-import { Timer } from "./Timer";
-import { Play, Clock, AlertTriangle } from "lucide-react";
+import { AlertTriangle, Clock, Play } from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Level2Card from "./Level2Card";
 import Level2Timer from "./Level2Timer";
 import { getLevel2Progress } from "./level2/level2ProgressHelpers";
+import { useGameSession } from "./useGameSession";
 
 // Real eligibility check: only allow if user is in winners_list_level1
 import { supabase } from "../lib/supabase";
@@ -286,8 +285,8 @@ const Level2Simulation: React.FC = () => {
       }, 1200);
     };
     return (
-      <div className="min-h-screen bg-gray-800 flex flex-col items-center justify-center p-2 relative">
-        <div className="container mx-auto px-3 py-2">
+      <div className="min-h-screen bg-gray-800 flex flex-col items-center justify-center relative">
+        <div className="container mx-auto px-3">
           {level2Screen !== 3 && (
             <div className="flex items-center justify-between pixel-border bg-gradient-to-r from-gray-700 to-gray-600 px-2 py-1 mb-4">
               {/* Left - Level and Case */}

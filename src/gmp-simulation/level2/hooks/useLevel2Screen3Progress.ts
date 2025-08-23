@@ -8,6 +8,12 @@ export interface Level2Screen3Progress {
   user_id: string;
   email: string;
   
+  // Idea statement fields (new stage 1)
+  idea_statement_what: string;
+  idea_statement_who: string;
+  idea_statement_how: string;
+  idea_statement?: string; // Computed field
+  
   // Form data fields
   problem: string;
   technology: string;
@@ -66,10 +72,28 @@ export const useLevel2Screen3Progress = (): UseLevel2Screen3ProgressReturn => {
 
   // Calculate progress percentage based on completed stages
   const calculateProgressPercentage = useCallback((completedStages: number[]): number => {
-    // Only count stages that require user input (exclude always-complete/optional stages 7 and 8)
-    const inputStages = [1, 2, 3, 4, 5, 6, 9];
+    // Only count stages that require user input (exclude always-complete/optional stages 8 and 9)
+    const inputStages = [1, 2, 3, 4, 5, 6, 7, 10]; // Updated for 10 stages total
     const completedInputStages = completedStages.filter(stage => inputStages.includes(stage));
     return completedInputStages.length === 0 ? 0 : (completedInputStages.length / inputStages.length) * 100;
+  }, []);
+
+  // Helper function to parse idea statement into parts
+  const parseIdeaStatement = useCallback((ideaStatement: string) => {
+    if (!ideaStatement) {
+      return { what: '', who: '', how: '' };
+    }
+    
+    // Try to parse the existing format: "I want to solve X for Y by Z"
+    const match = ideaStatement.match(/I want to solve (.+) for (.+) by (.+)/);
+    if (match) {
+      return {
+        what: match[1]?.trim() || '',
+        who: match[2]?.trim() || '',
+        how: match[3]?.trim() || ''
+      };
+    }
+    return { what: '', who: '', how: '' };
   }, []);
 
   // Convert form data to progress format
@@ -78,7 +102,16 @@ export const useLevel2Screen3Progress = (): UseLevel2Screen3ProgressReturn => {
     currentStage: number,
     completedStages: number[]
   ): Partial<Level2Screen3Progress> => {
+    // Parse idea statement into individual parts
+    const ideaParts = parseIdeaStatement(formData.ideaStatement || '');
+    
     return {
+      // Idea statement fields (stage 1)
+      idea_statement_what: ideaParts.what,
+      idea_statement_who: ideaParts.who,
+      idea_statement_how: ideaParts.how,
+      
+      // Other form data fields
       problem: formData.problem || '',
       technology: formData.technology || '',
       collaboration: formData.collaboration || '',
@@ -96,13 +129,20 @@ export const useLevel2Screen3Progress = (): UseLevel2Screen3ProgressReturn => {
       current_stage: currentStage,
       completed_stages: completedStages,
       progress_percentage: calculateProgressPercentage(completedStages),
-      is_completed: currentStage === 9 && completedStages.includes(9)
+      is_completed: currentStage === 10 && completedStages.includes(10) // Updated to stage 10
     };
-  }, [calculateProgressPercentage]);
+  }, [calculateProgressPercentage, parseIdeaStatement]);
 
   // Convert progress data to form format
   const progressToFormData = useCallback((progressData: Level2Screen3Progress): StageFormData => {
+    // Reconstruct the ideaStatement from the individual parts
+    let ideaStatement = '';
+    if (progressData.idea_statement_what || progressData.idea_statement_who || progressData.idea_statement_how) {
+      ideaStatement = `I want to solve ${progressData.idea_statement_what || ''} for ${progressData.idea_statement_who || ''} by ${progressData.idea_statement_how || ''}`;
+    }
+    
     return {
+      ideaStatement: ideaStatement,
       problem: progressData.problem || '',
       technology: progressData.technology || '',
       collaboration: progressData.collaboration || '',
@@ -343,7 +383,14 @@ export const useLevel2Screen3Progress = (): UseLevel2Screen3ProgressReturn => {
 
 // Utility functions for converting between formats
 export const convertProgressToFormData = (progressData: Level2Screen3Progress): StageFormData => {
+  // Reconstruct the ideaStatement from the individual parts
+  let ideaStatement = '';
+  if (progressData.idea_statement_what || progressData.idea_statement_who || progressData.idea_statement_how) {
+    ideaStatement = `I want to solve ${progressData.idea_statement_what || ''} for ${progressData.idea_statement_who || ''} by ${progressData.idea_statement_how || ''}`;
+  }
+  
   return {
+    ideaStatement: ideaStatement,
     problem: progressData.problem || '',
     technology: progressData.technology || '',
     collaboration: progressData.collaboration || '',

@@ -31,13 +31,27 @@ const Level2Screen3: React.FC = () => {
   // Move isStageComplete here so it is defined before any usage
   const isStageComplete = (stageNum: number) => {
     switch(stageNum) {
-      case 1: return formData.problem.length > 0;
-      case 2: return formData.technology.length > 0;
-      case 3: return formData.collaboration.length > 0;
-      case 4: return formData.creativity.length > 0;
-      case 5: return formData.speedScale.length > 0;
-      case 6: return formData.impact.length > 0;
-      case 7:
+      case 1: {
+        // For the idea statement, we need to validate that all three parts are filled
+        if (!formData.ideaStatement || formData.ideaStatement.length === 0) return false;
+        
+        // Parse the idea statement to check if all three parts are present
+        const match = formData.ideaStatement.match(/I want to solve (.+) for (.+) by (.+)/);
+        if (match) {
+          const what = match[1]?.trim() || '';
+          const who = match[2]?.trim() || '';
+          const how = match[3]?.trim() || '';
+          return what.length > 0 && who.length > 0 && how.length > 0;
+        }
+        return false;
+      }
+      case 2: return formData.problem.length > 0;
+      case 3: return formData.technology.length > 0;
+      case 4: return formData.collaboration.length > 0;
+      case 5: return formData.creativity.length > 0;
+      case 6: return formData.speedScale.length > 0;
+      case 7: return formData.impact.length > 0;
+      case 8:
         // All final statement fields must be filled (use unique keys)
         return (
           !!formData.finalProblem && formData.finalProblem.trim() !== '' &&
@@ -47,8 +61,8 @@ const Level2Screen3: React.FC = () => {
           !!formData.finalSpeedScale && formData.finalSpeedScale.trim() !== '' &&
           !!formData.finalImpact && formData.finalImpact.trim() !== ''
         );
-      case 8: return true; // Prototype/Demo/Sketch is optional
-      case 9: return formData.reflection.length > 0;
+      case 9: return true; // Prototype/Demo/Sketch is optional
+      case 10: return formData.reflection.length > 0;
       default: return false;
     }
   };
@@ -89,6 +103,7 @@ const Level2Screen3: React.FC = () => {
   const [stage, setStage] = useState(1);
   const [showProceedWarning, setShowProceedWarning] = useState(false);
   const [formData, setFormData] = useState<StageFormData>({
+    ideaStatement: '',
     problem: '',
     technology: '',
     collaboration: '',
@@ -142,8 +157,8 @@ const Level2Screen3: React.FC = () => {
 
   // Calculate progress based on completed stages
   useEffect(() => {
-    // Only count stages that require user input (exclude always-complete/optional stages 7 and 8)
-    const inputStages = [1, 2, 3, 4, 5, 6, 9];
+    // Only count stages that require user input (exclude always-complete/optional stages 8 and 9)
+    const inputStages = [1, 2, 3, 4, 5, 6, 7, 10];
     let completed = 0;
     for (const i of inputStages) {
       if (isStageComplete(i)) completed++;
@@ -267,6 +282,16 @@ const Level2Screen3: React.FC = () => {
 
   const stages: StageData[] = [
     { 
+      icon: Lightbulb, 
+      title: "Idea Statement", 
+      subtitle: "Define",
+      color: "from-amber-500 to-yellow-500", 
+      bgColor: "from-amber-900/20 to-yellow-900/20",
+      accent: "amber",
+      description: "Write your idea in one line: 'I want to solve ___ for ___ by ___'",
+      caseNumber: 1
+    },
+    { 
       icon: Target, 
       title: "Problem", 
       subtitle: "Identify",
@@ -274,7 +299,7 @@ const Level2Screen3: React.FC = () => {
       bgColor: "from-red-900/20 to-pink-900/20",
       accent: "red",
       description: "Define the core issue you're solving",
-      caseNumber: 1
+      caseNumber: 2
     },
     { 
       icon: Zap, 
@@ -284,7 +309,7 @@ const Level2Screen3: React.FC = () => {
       bgColor: "from-blue-900/20 to-cyan-900/20",
       accent: "blue",
       description: "Choose your tech stack wisely",
-      caseNumber: 2
+      caseNumber: 3
     },
     { 
       icon: Users, 
@@ -294,7 +319,7 @@ const Level2Screen3: React.FC = () => {
       bgColor: "from-green-900/20 to-emerald-900/20",
       accent: "green",
       description: "Build strategic partnerships",
-      caseNumber: 3
+      caseNumber: 4
     },
     { 
       icon: Sparkles, 
@@ -304,7 +329,7 @@ const Level2Screen3: React.FC = () => {
       bgColor: "from-purple-900/20 to-violet-900/20",
       accent: "purple",
       description: "Add your unique twist",
-      caseNumber: 4
+      caseNumber: 5
     },
     { 
       icon: Rocket, 
@@ -314,7 +339,7 @@ const Level2Screen3: React.FC = () => {
       bgColor: "from-orange-900/20 to-red-900/20",
       accent: "orange",
       description: "Plan for rapid growth",
-      caseNumber: 5
+      caseNumber: 6
     },
     { 
       icon: Globe, 
@@ -324,7 +349,7 @@ const Level2Screen3: React.FC = () => {
       bgColor: "from-teal-900/20 to-cyan-900/20",
       accent: "teal",
       description: "Measure meaningful change",
-      caseNumber: 6
+      caseNumber: 7
     },
     { 
       icon: FileText, 
@@ -334,7 +359,7 @@ const Level2Screen3: React.FC = () => {
       bgColor: "from-indigo-900/20 to-purple-900/20",
       accent: "indigo",
       description: "Craft your innovation story",
-      caseNumber: 7
+      caseNumber: 8
     },
     { 
       icon: Upload, 
@@ -344,7 +369,7 @@ const Level2Screen3: React.FC = () => {
       bgColor: "from-pink-900/20 to-yellow-900/20",
       accent: "pink",
       description: "Optional: Show your solution in action",
-      caseNumber: 8
+      caseNumber: 9
     },
     { 
       icon: Lightbulb, 
@@ -354,7 +379,7 @@ const Level2Screen3: React.FC = () => {
       bgColor: "from-yellow-900/20 to-amber-900/20",
       accent: "yellow",
       description: "Document your journey",
-      caseNumber: 9
+      caseNumber: 10
     }
   ];
 
@@ -382,10 +407,10 @@ const Level2Screen3: React.FC = () => {
     try {
       // Determine the next stage before saving
       let nextStage = stage;
-      if (stage === 8) {
-        nextStage = 9;
-      } else if (stage === 9) {
-        nextStage = 9; // Stay on 9 for completion
+      if (stage === 9) {
+        nextStage = 10;
+      } else if (stage === 10) {
+        nextStage = 10; // Stay on 10 for completion
       } else {
         nextStage = stage + 1;
       }
@@ -407,10 +432,10 @@ const Level2Screen3: React.FC = () => {
       // Only proceed if save was successful
       setShowProceedWarning(false);
       
-      if (stage === 8) {
-        console.log('🎭 Moving from stage 8 to 9');
-        setStage(9);
-      } else if (stage === 9) {
+      if (stage === 9) {
+        console.log('🎭 Moving from stage 9 to 10');
+        setStage(10);
+      } else if (stage === 10) {
         console.log('🏁 Completing final stage');
         // User is completing the last stage, mark as completed and show completion popup
         const completionSuccessful = await markCompleted();
@@ -457,6 +482,7 @@ const Level2Screen3: React.FC = () => {
     if (success) {
       // Reset form data and stage
       setFormData({
+        ideaStatement: '',
         problem: '',
         technology: '',
         collaboration: '',
