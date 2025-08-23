@@ -31,13 +31,38 @@ const showWalkthroughVideo = () => {
   window.open(videoUrl, '_blank');
 };
 
+const startGame = async () => {
+  // Clear saved progress and start fresh
+  const questions = []; // Replace with logic to fetch or generate questions
+  const initialAnswers = questions.map(() => ({ solution: "" }));
+
+  setShowCountdown(true);
+  setCountdownNumber(3);
+  setTimerActive(false);
+
+  let i = 3;
+  const interval = setInterval(() => {
+    i--;
+    setCountdownNumber(i);
+    if (i === 0) {
+      clearInterval(interval);
+      setShowCountdown(false);
+      setShowLevel2Card(true);
+      setTimerActive(true);
+    }
+  }, 1000);
+
+  setHasSavedProgress(false);
+  setSavedProgressInfo(null);
+};
+
 const Level2Simulation: React.FC = () => {
   const navigate = useNavigate();
   // --- All hooks must be at the top level, before any early returns ---
   const [canAccessLevel2, setCanAccessLevel2] = useState<boolean | null>(null);
   const [hideProgress, setHideProgress] = React.useState(false);
   const [showLevelModal, setShowLevelModal] = useState(false);
-  const [gameCompleted, setGameCompleted] = useState(false);
+  const [gameCompleted, setGameCompleted] = useState(false); // Ensure gameCompleted is defined
   const { session_id, email, teamInfoError, loadingIds } = useGameSession();
   const [showLevel2Card, setShowLevel2Card] = useState(false);
   const [showCountdown, setShowCountdown] = useState(false);
@@ -52,6 +77,14 @@ const Level2Simulation: React.FC = () => {
   const INITIAL_TIME = 10800;
   const [timerActive, setTimerActive] = useState(false);
   const [timerValue, setTimerValue] = useState(INITIAL_TIME);
+  const [isFirstTime, setIsFirstTime] = useState(true);
+  const [hasSavedProgress, setHasSavedProgress] = useState(false);
+  const [savedProgressInfo, setSavedProgressInfo] = useState<{
+    currentQuestion: number;
+    totalQuestions: number;
+    answeredQuestions: number;
+    timeRemaining: number;
+  } | null>(null);
 
   // Restore progress on mount
   useEffect(() => {
@@ -71,9 +104,14 @@ const Level2Simulation: React.FC = () => {
           }
           setLevel2Screen(nextScreen);
           if (typeof progress.timer === 'number') setTimerValue(progress.timer);
+          // Update isFirstTime based on progress
+          setIsFirstTime(nextScreen === 1 && !progress.completed_screens?.length);
+        } else {
+          setIsFirstTime(true); // No progress found, assume first time
         }
       } catch (err) {
         console.warn('[Level2Simulation] No progress found or error restoring:', err);
+        setIsFirstTime(true); // Default to first time on error
       }
     })();
   }, []);
@@ -99,7 +137,7 @@ const Level2Simulation: React.FC = () => {
           if (data.full_name) setFullName(data.full_name);
           if (data.team_name) setTeamName(data.team_name);
           setShowCongrats(true);
-          setTimeout(() => setShowCongrats(false), 3500);
+          setTimeout(() => setShowCongrats(false), 5000); // Updated duration to 5 seconds
         }
       }
     };
@@ -265,106 +303,106 @@ const Level2Simulation: React.FC = () => {
   if (showLevel2Card) {
   const progress = ((currentQuestion + 1) / totalQuestions) * 100;
   const isCaseSelection = level2Screen === 1 && showLevel2Card;
-  // ...existing code...
-    // Loader overlay at top level
-    if (hideProgress) {
-      return (
-        <div className="fixed inset-0 flex flex-col items-center justify-center bg-gray-800 bg-opacity-95 z-50 animate-fadeIn">
-          <div className="w-16 h-16 rounded-full bg-yellow-200 flex items-center justify-center mb-6 animate-bounce">
-            <svg className="w-12 h-12 text-yellow-600 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth="4" className="opacity-25" /><path d="M4 12a8 8 0 018-8" strokeWidth="4" className="opacity-75" /></svg>
-          </div>
-          <div className="text-yellow-200 text-2xl font-black pixel-text text-center">Preparing selected case for solution round...</div>
-        </div>
-      );
-    }
-    // Handler to advance screen and show loader
-    const handleAdvanceScreen = () => {
-      setHideProgress(true);
-      setTimeout(() => {
-        setHideProgress(false);
-        setLevel2Screen((s) => s + 1);
-      }, 1200);
-    };
+  // Loader overlay at top level
+  if (hideProgress) {
     return (
-      <div className="min-h-screen bg-gray-800 flex flex-col items-center justify-center p-2 relative">
-        <div className="container mx-auto px-3 py-2">
-          {level2Screen !== 3 && (
-            <div className="flex items-center justify-between pixel-border bg-gradient-to-r from-gray-700 to-gray-600 px-2 py-1 mb-4">
-              {/* Left - Level and Case */}
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gray-700 pixel-border flex items-center justify-center">
-                  <span className="text-gray-100 font-black text-sm pixel-text">2</span>
-                </div>
-                <div>
-                  <h1 className="text-gray-100 font-black text-sm pixel-text">LEVEL 2</h1>
-                  <div className="text-white text-xs font-bold bg-violet-600 px-3 py-1 rounded-lg">
-                    {isCaseSelection ? 'Case Selection' : `CASE ${currentQuestion + 1}/${totalQuestions}`}
-                  </div>
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-gray-800 bg-opacity-95 z-50 animate-fadeIn">
+        <div className="w-16 h-16 rounded-full bg-yellow-200 flex items-center justify-center mb-6 animate-bounce">
+          <svg className="w-12 h-12 text-yellow-600 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth="4" className="opacity-25" /><path d="M4 12a8 8 0 018-8" strokeWidth="4" className="opacity-75" /></svg>
+        </div>
+        <div className="text-yellow-200 text-2xl font-black pixel-text text-center">Preparing selected case for solution round...</div>
+      </div>
+    );
+  }
+  // Handler to advance screen and show loader
+  const handleAdvanceScreen = () => {
+    setHideProgress(true);
+    setTimeout(() => {
+      setHideProgress(false);
+      setLevel2Screen((s) => s + 1);
+    }, 1200);
+  };
+  return (
+    <div className="min-h-screen bg-gray-800 flex flex-col items-center justify-center p-2 relative">
+      <div className="container mx-auto px-3 py-2">
+        {level2Screen !== 3 && (
+          <div className="flex items-center justify-between pixel-border bg-gradient-to-r from-gray-700 to-gray-600 px-2 py-1 mb-4">
+            {/* Left - Level and Case */}
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gray-700 pixel-border flex items-center justify-center">
+                <span className="text-gray-100 font-black text-sm pixel-text">2</span>
+              </div>
+              <div>
+                <h1 className="text-gray-100 font-black text-sm pixel-text">LEVEL 2</h1>
+                <div className="text-white text-xs font-bold bg-violet-600 px-3 py-1 rounded-lg">
+                  {isCaseSelection ? 'Case Selection' : `CASE ${currentQuestion + 1}/${totalQuestions}`}
                 </div>
               </div>
-              {/* Right - Progress and Timer */}
-              <div className="flex items-center gap-4">
-                {/* Progress Bar */}
-                <div className="flex items-center gap-1">
-                  {/* <div className="w-16 h-2 bg-gray-800 pixel-border overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div> */}
-                  {/* <span className="text-white text-xs font-black min-w-[2rem] pixel-text">
-                    {Math.round(progress)}%
-                  </span> */}
-                  {/* <div className="w-3 h-3 bg-yellow-600 pixel-border flex items-center justify-center">
-                    <svg className="w-2 h-2 text-yellow-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 17.75L18.2 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.44 4.73L5.8 21z" /></svg>
-                  </div> */}
-                </div>
-                {/* Timer */}
-                <div className="flex items-center gap-1 pixel-border bg-gradient-to-r from-red-700 to-red-600 px-2 py-1">
-                  <div className="w-3 h-3 bg-gray-800 pixel-border flex items-center justify-center">
-                    <Clock className="w-2 h-2 text-gray-300" />
-                  </div>
-                  <Level2Timer
-                    initialTime={INITIAL_TIME}
-                    isActive={timerActive}
-                    onTimeUp={() => setTimerActive(false)}
+            </div>
+            {/* Right - Progress and Timer */}
+            <div className="flex items-center gap-4">
+              {/* Progress Bar */}
+              <div className="flex items-center gap-1">
+                {/* <div className="w-16 h-2 bg-gray-800 pixel-border overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500"
+                    style={{ width: `${progress}%` }}
                   />
+                </div> */}
+                {/* <span className="text-white text-xs font-black min-w-[2rem] pixel-text">
+                  {Math.round(progress)}%
+                </span> */}
+                {/* <div className="w-3 h-3 bg-yellow-600 pixel-border flex items-center justify-center">
+                  <svg className="w-2 h-2 text-yellow-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 17.75L18.2 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.44 4.73L5.8 21z" /></svg>
+                </div> */}
+              </div>
+              {/* Timer */}
+              <div className="flex items-center gap-1 pixel-border bg-gradient-to-r from-red-700 to-red-600 px-2 py-1">
+                <div className="w-3 h-3 bg-gray-800 pixel-border flex items-center justify-center">
+                  <Clock className="w-2 h-2 text-gray-300" />
                 </div>
                 <Level2Timer
                   initialTime={INITIAL_TIME}
                   isActive={timerActive}
                   onTimeUp={() => setTimerActive(false)}
-                  onTick={setTimerValue}
                 />
               </div>
+              <Level2Timer
+                initialTime={INITIAL_TIME}
+                isActive={timerActive}
+                onTimeUp={() => setTimerActive(false)}
+                onTick={setTimerValue}
+              />
             </div>
-          )}
-        </div>
-        <div className="relative w-full">
-          <Level2Card
-            teamName={teamName || ''}
-            teamMembers={teamMembers}
-            screen={level2Screen}
-            onAdvanceScreen={handleAdvanceScreen}
-            timer={timerValue}
-          />
-          {/* Countdown overlay for screen 1 */}
-          {isCaseSelection && showCountdown && (
-            <div className="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
-              <div className="text-center">
-                <div className="text-8xl md:text-9xl font-black text-white pixel-text animate-pulse mb-4">
-                  {countdownNumber}
-                </div>
-                <div className="text-xl md:text-2xl font-bold text-gray-300 pixel-text">
-                  GET READY TO START
-                </div>
+          </div>
+        )}
+      </div>
+      <div className="relative w-full">
+        <Level2Card
+          teamName={teamName || ''}
+          teamMembers={teamMembers}
+          screen={level2Screen}
+          onAdvanceScreen={handleAdvanceScreen}
+          timer={timerValue}
+        />
+        {/* Countdown overlay for screen 1 */}
+        {isCaseSelection && showCountdown && (
+          <div className="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+            <div className="text-center">
+              <div className="text-8xl md:text-9xl font-black text-white pixel-text animate-pulse mb-4">
+                {countdownNumber}
+              </div>
+              <div className="text-xl md:text-2xl font-bold text-gray-300 pixel-text">
+                GET READY TO START
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-    );
+    </div>
+  );
   }
+  // Main simulation UI before starting
 
   console.log('[Level2Simulation][DEBUG] Simulation UI rendered. canAccessLevel2 =', canAccessLevel2, 'showCongrats =', showCongrats, 'fullName =', fullName);
   return (
@@ -372,28 +410,35 @@ const Level2Simulation: React.FC = () => {
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
       <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
-      <div className="pixel-border-thick bg-gradient-to-r from-purple-600 to-purple-700 p-4 max-w-xl w-full text-center relative z-10">
+      <div className="pixel-border-thick bg-gradient-to-r from-blue-600 to-blue-700 p-4 max-w-xl w-full text-center relative z-10">
+        {/* Back Button */}
+        <div className="absolute top-4 left-4">
+          <button
+            onClick={() => navigate('/modules')}
+            className="pixel-border bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm flex items-center gap-2"
+          >
+            <Play className="w-4 h-4" />
+            BACK
+          </button>
+        </div>
         <div className="flex justify-center mb-4">
-          <div className="w-12 h-12 bg-purple-500 pixel-border flex items-center justify-center">
-            <Play className="w-6 h-6 text-purple-900" />
+          <div className="w-12 h-12 bg-blue-500 pixel-border flex items-center justify-center">
+            <Play className="w-6 h-6 text-blue-900" />
           </div>
         </div>
-        <h1 className="text-xl font-black text-purple-100 mb-3 pixel-text">
-          GMP SOLUTION ROUND
+        <h1 className="text-xl font-black text-blue-100 mb-3 pixel-text">
+          CAPAThon 2.0
         </h1>
-        <p className="text-purple-100 mb-4 text-sm font-bold">
-          Select the best solutions for each GMP case scenario
-        </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
           <div className="pixel-border bg-gradient-to-r from-blue-700 to-blue-600 p-2">
             <div className="w-6 h-6 bg-blue-800 pixel-border mx-auto mb-1 flex items-center justify-center">
               <Clock className="w-3 h-3 text-blue-300" />
             </div>
             <h3 className="font-black text-white text-xs pixel-text">
-              180 MINUTES
+              3 Hours
             </h3>
             <p className="text-blue-100 text-xs font-bold">
-              Select 1 case , find solution and Innovate.
+              Select 1 case , find Solution and Innovate.
             </p>
           </div>
           <div className="pixel-border bg-gradient-to-r from-orange-700 to-orange-600 p-2">
@@ -401,10 +446,10 @@ const Level2Simulation: React.FC = () => {
               <AlertTriangle className="w-3 h-3 text-orange-300" />
             </div>
             <h3 className="font-black text-white text-xs pixel-text">
-              5 CASES
+              Solution Round
             </h3>
             <p className="text-orange-100 text-xs font-bold">
-              Team attempted case in L1
+              Find Solution for selected case
             </p>
           </div>
           <div className="pixel-border bg-gradient-to-r from-purple-700 to-purple-600 p-2">
@@ -412,7 +457,7 @@ const Level2Simulation: React.FC = () => {
               <Play className="w-3 h-3 text-purple-300" />
             </div>
             <h3 className="font-black text-white text-xs pixel-text">
-              1 INNOVATION ROUND
+               INNOVATION ROUND
             </h3>
             <p className="text-purple-100 text-xs font-bold">
               Answer precisely and add attachment
@@ -420,35 +465,30 @@ const Level2Simulation: React.FC = () => {
           </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-          <button
-            onClick={() => {
-              // Set session_id and email in sessionStorage if available
-              if (session_id && email) {
-                window.sessionStorage.setItem('session_id', session_id);
-                window.sessionStorage.setItem('email', email);
-                console.log('[DEBUG] Set session_id and email in sessionStorage:', session_id, email);
-              } else {
-                console.warn('[DEBUG] session_id or email missing, not set in sessionStorage');
-              }
-              setShowCountdown(true);
-              setCountdownNumber(3);
-              setTimerActive(false); // Ensure timer is not running during countdown
-              let i = 3;
-              const interval = setInterval(() => {
-                i--;
-                setCountdownNumber(i);
-                if (i === 0) {
-                  clearInterval(interval);
-                  setShowCountdown(false);
-                  setShowLevel2Card(true);
-                  setTimerActive(true); // Start timer after countdown
+          {hasSavedProgress ? (
+            <button
+              onClick={() => {
+                if (isHackathonCompleted()) {
+                  showCompletionModal();
+                } else {
+                  continueGame();
                 }
-              }, 1000);
-            }}
-            className="pixel-border bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm"
-          >
-            START HACKATHON
-          </button>
+              }}
+              className={`pixel-border text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm ${isHackathonCompleted()
+                ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500"
+                : "bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500"
+              }`}
+            >
+              {isHackathonCompleted() ? "HL-2 COMPLETED" : "CONTINUE HACKATHON"}
+            </button>
+          ) : (
+            <button
+              onClick={startGame}
+              className="pixel-border bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm"
+            >
+              START HACKATHON
+            </button>
+          )}
           <button
             onClick={showWalkthroughVideo}
             className="pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm flex items-center gap-2"
@@ -475,12 +515,12 @@ const Level2Simulation: React.FC = () => {
       </div>
     </div>
   );
-// Stop timer if game is completed
+};
+
+export default Level2Simulation;
 useEffect(() => {
   if (gameCompleted) {
     setTimerActive(false);
   }
 }, [gameCompleted]);
-};
-
 export default Level2Simulation;

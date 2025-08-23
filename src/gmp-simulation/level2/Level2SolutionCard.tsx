@@ -230,7 +230,7 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
       return;
     }
     const is_correct = solution === question.correctSolution;
-    const score = is_correct ? 40 : 0;
+    const score = is_correct ? 30 : 0;
     const { data, error } = await supabase
       .from('selected_solution')
       .upsert([
@@ -257,6 +257,14 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
     saveSelectedSolution(selectedSolution);
     if (typeof onProceedConfirmed === 'function') onProceedConfirmed();
   };
+
+  // Close confirm modal after 5 seconds if open
+  useEffect(() => {
+    if (showConfirm) {
+      const timer = setTimeout(() => setShowConfirm(false), 5000); // Increase modal visibility to 5 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [showConfirm]);
 
   return (
     <DndContext
