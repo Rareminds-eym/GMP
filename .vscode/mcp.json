@@ -9,7 +9,9 @@
   ],
   "servers": {
     "supabase": {
-      "command": "/home/gokul/.nvm/versions/node/v20.17.0/bin/npx",
+      // "command": "/home/gokul/.nvm/versions/node/v20.17.0/bin/npx",
+      "command": "npx",
+
       "args": [
         "-y",
         "@supabase/mcp-server-supabase@latest",
