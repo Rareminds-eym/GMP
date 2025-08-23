@@ -1,0 +1,24 @@
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "supabase-access-token",
+      "description": "Supabase personal access token",
+      "password": true
+    }
+  ],
+  "servers": {
+    "supabase": {
+      "command": "/home/gokul/.nvm/versions/node/v20.17.0/bin/npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--project-ref=cjwlorubdahdvvaxgnzx"
+      ],
+      "env": {
+        "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqd2xvcnViZGFoZHZ2YXhnbnp4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDMwODc1OSwiZXhwIjoyMDY1ODg0NzU5fQ.Wc8rTfJoZg6_Ka3IV2n-7YB_Y5cG5WIG09Z_ZcK6oRg",
+        "SUPABASE_ACCESS_TOKEN": "sbp_2d03989b7cfb28cdca3b3cf9b060ee06a106094e"
+      }
+    }
+  }
+}
