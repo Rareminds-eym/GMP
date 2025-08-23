@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import logo from "../../public/logos/bulb.png";
+import logo from "/logos/bulb.png";
 import { Icon } from '@iconify/react';
 import { Lock, Clock, Trophy, Target, Home, RotateCcw, HelpCircle, Hash, Award, Heart, Flame, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';

@@ -39,6 +39,7 @@ const Level2Simulation: React.FC = () => {
   const [showLevelModal, setShowLevelModal] = useState(false);
   const [gameCompleted, setGameCompleted] = useState(false);
   const { session_id, email, teamInfoError, loadingIds } = useGameSession();
+  const [authEmail, setAuthEmail] = useState<string | null>(null);
   const [showLevel2Card, setShowLevel2Card] = useState(false);
   const [showCountdown, setShowCountdown] = useState(false);
   const [countdownNumber, setCountdownNumber] = useState(3);
@@ -53,6 +54,7 @@ const Level2Simulation: React.FC = () => {
   const [timerActive, setTimerActive] = useState(false);
   const [timerValue, setTimerValue] = useState(INITIAL_TIME);
   const [isFirstTime, setIsFirstTime] = useState(true);
+  const [allowProceedWithoutFullName, setAllowProceedWithoutFullName] = useState(false);
 
   // Restore progress on mount
   useEffect(() => {
@@ -90,90 +92,160 @@ const Level2Simulation: React.FC = () => {
     console.log('[Level2Simulation][DEBUG] canAccessLevel2 state changed:', canAccessLevel2);
   }, [canAccessLevel2]);
 
-  // Remove old auth fetch, now handled by useGameSession
+  // Fallback: Get email directly from Supabase Auth if team data is not available
+  useEffect(() => {
+    const fetchAuthEmail = async () => {
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+          console.warn('[Level2Simulation] No authenticated user found');
+          return;
+        }
+        console.log('[Level2Simulation][DEBUG] Auth user found:', user.email);
+        setAuthEmail(user.email || null);
+      } catch (err) {
+        console.warn('[Level2Simulation] Error fetching auth user:', err);
+      }
+    };
+    
+    // If we don't have email from useGameSession after a timeout, fetch from auth
+    if (!email) {
+      const timer = setTimeout(() => {
+        if (!email) {
+          console.log('[Level2Simulation][DEBUG] No email from useGameSession, fetching from auth...');
+          fetchAuthEmail();
+        }
+      }, 2000); // Wait 2 seconds for useGameSession to load
+      
+      return () => clearTimeout(timer);
+    }
+  }, [email]);
 
   // Fetch full name from winners_list_l1 if qualified
   useEffect(() => {
     const fetchFullNameAndTeam = async () => {
-      if (canAccessLevel2 && email) {
+      const effectiveEmail = email || authEmail;
+      if (canAccessLevel2 && effectiveEmail) {
+        console.log('[Level2Simulation][DEBUG] Fetching full name for email:', effectiveEmail);
         const { data, error } = await supabase
           .from("winners_list_l1")
           .select("full_name, team_name")
-          .eq("email", email)
+          .eq("email", effectiveEmail)
           .single();
         if (data) {
           if (data.full_name) setFullName(data.full_name);
           if (data.team_name) setTeamName(data.team_name);
           setShowCongrats(true);
           setTimeout(() => setShowCongrats(false), 5000); // Updated duration to 5 seconds
+        } else {
+          console.warn('[Level2Simulation][DEBUG] No data found for email:', effectiveEmail, 'Error:', error);
         }
       }
     };
     fetchFullNameAndTeam();
-  }, [canAccessLevel2, email]);
+  }, [canAccessLevel2, email, authEmail]);
 
-  // Eligibility check
+  // Eligibility check using email from useGameSession or authEmail fallback
   useEffect(() => {
+    const effectiveEmail = email || authEmail;
+    
     // Only check eligibility if email is available
-    if (!email) {
+    if (!effectiveEmail) {
+      console.log('[Level2Simulation][DEBUG] No email available yet, waiting...', { email, authEmail });
       setCanAccessLevel2(null); // Still loading, don't check yet
       return;
     }
+    
     const checkLevel2Access = async () => {
-      setCanAccessLevel2(null); // loading
-      const allowed = await isLevel2Allowed(email, session_id);
-      console.log('[Level2Simulation][DEBUG] Eligibility check result:', allowed, 'for email:', email, 'session_id:', session_id);
-      setCanAccessLevel2(allowed);
+      try {
+        console.log('[Level2Simulation][DEBUG] Checking eligibility with email:', effectiveEmail);
+        setCanAccessLevel2(null); // loading
+        const allowed = await isLevel2Allowed(effectiveEmail, session_id);
+        console.log('[Level2Simulation][DEBUG] Eligibility check result:', allowed, 'for email:', effectiveEmail, 'session_id:', session_id);
+        setCanAccessLevel2(allowed);
+      } catch (error) {
+        console.error('[Level2Simulation][ERROR] Failed to check eligibility:', error);
+        setCanAccessLevel2(false); // Default to false on error
+      }
     };
     checkLevel2Access();
-  }, [email, session_id]);
+  }, [email, authEmail, session_id]);
 
-  // Fetch team members from attempt_details table using user's email (find team_name, then all members with that team_name)
+  // Fetch team members from teams table using user's email (find team_name, then all members with that team_name)
   useEffect(() => {
     async function fetchTeamMembers() {
-      console.log('[Level2Simulation][DEBUG] fetchTeamMembers called with email:', email);
-      if (!email) {
+      const effectiveEmail = email || authEmail;
+      console.log('[Level2Simulation][DEBUG] fetchTeamMembers called with email:', effectiveEmail);
+      if (!effectiveEmail) {
         console.warn('[Level2Simulation][DEBUG] No email found for logged-in user.');
         return;
       }
-      console.log('[Level2Simulation][DEBUG] Logged-in user email:', email);
-      // First, get the team_name for this user
-      const { data: userData, error: userError } = await supabase
-        .from('attempt_details')
-        .select('team_name')
-        .eq('email', email)
-        .limit(1)
-        .single();
-      console.log('[Level2Simulation][DEBUG] team_name fetch result:', { userData, userError });
-      if (userError || !userData?.team_name) {
+      console.log('[Level2Simulation][DEBUG] Logged-in user email:', effectiveEmail);
+      
+      try {
+        // Try to get team members from teams table instead of attempt_details
+        const { data, error } = await supabase
+          .from('teams')
+          .select('email, team_name')
+          .eq('email', effectiveEmail)
+          .limit(1)
+          .single();
+        
+        console.log('[Level2Simulation][DEBUG] teams table fetch result:', { data, error });
+        
+        if (error || !data?.team_name) {
+          console.warn('[Level2Simulation][DEBUG] No team data found for email:', effectiveEmail, { error });
+          setTeamMembers([]);
+          return;
+        }
+        
+        const teamName = data.team_name;
+        console.log('[Level2Simulation][DEBUG] Found team_name:', teamName);
+        
+        // Get all team members with the same team_name
+        const { data: teamMembersData, error: membersError } = await supabase
+          .from('teams')
+          .select('email')
+          .eq('team_name', teamName);
+          
+        console.log('[Level2Simulation][DEBUG] team members fetch result:', { teamMembersData, membersError });
+        
+        if (teamMembersData && Array.isArray(teamMembersData)) {
+          // Convert to expected format
+          const members = teamMembersData.map(member => ({ email: member.email }));
+          setTeamMembers(members);
+          console.log('[Level2Simulation][DEBUG] Loaded teamMembers from teams table:', members);
+        } else {
+          setTeamMembers([]);
+          console.warn('[Level2Simulation][DEBUG] No team members found:', { membersError });
+        }
+      } catch (err) {
+        console.error('[Level2Simulation][DEBUG] Error fetching team members:', err);
         setTeamMembers([]);
-        console.warn('[Level2Simulation][DEBUG] No team_name found for email:', email, { userError });
-        return;
-      }
-      const teamName = userData.team_name;
-      console.log('[Level2Simulation][DEBUG] Found team_name:', teamName);
-      // Now, get all members with this team_name
-      const { data, error } = await supabase
-        .from('attempt_details')
-        .select('email')
-        .eq('team_name', teamName);
-      console.log('[Level2Simulation][DEBUG] attempt_details fetch result for team_name:', { data, error });
-      if (data && Array.isArray(data)) {
-        // Remove duplicate emails (one per member)
-        const uniqueMembers = Object.values(
-          data.reduce((acc: Record<string, { email: string }>, curr) => {
-            acc[curr.email] = curr;
-            return acc;
-          }, {} as Record<string, { email: string }>));
-        setTeamMembers(uniqueMembers as { email: string }[]);
-        console.log('[Level2Simulation][DEBUG] Loaded teamMembers from attempt_details:', uniqueMembers);
-      } else {
-        setTeamMembers([]);
-        console.warn('[Level2Simulation][DEBUG] No team members found in attempt_details for team_name:', teamName, { data, error });
       }
     }
     fetchTeamMembers();
-  }, [email]);
+  }, [email, authEmail]);
+
+  // Effect to allow proceeding without fullName after timeout
+  useEffect(() => {
+    if (canAccessLevel2 === true) {
+      // After 3 seconds, allow proceeding even without fullName
+      const timer = setTimeout(() => {
+        console.log('[Level2Simulation][DEBUG] Proceeding without fullName after timeout');
+        setAllowProceedWithoutFullName(true);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [canAccessLevel2]);
+
+  // Stop timer if game is completed
+  useEffect(() => {
+    if (gameCompleted) {
+      setTimerActive(false);
+    }
+  }, [gameCompleted]);
 
   // Completion logic
   const isHackathonCompleted = useCallback(() => {
@@ -186,8 +258,39 @@ const Level2Simulation: React.FC = () => {
   }, []);
 
   // UI rendering
-  console.log('[Level2Simulation][DEBUG] Render: canAccessLevel2 =', canAccessLevel2);
+  console.log('[Level2Simulation][DEBUG] Render: canAccessLevel2 =', canAccessLevel2, 'email =', email, 'loadingIds =', loadingIds, 'fullName =', fullName, 'showCongrats =', showCongrats, 'teamInfoError =', teamInfoError);
+  
+  // If there's a team info error, show it
+  if (teamInfoError) {
+    console.log('[Level2Simulation][DEBUG] Team info error:', teamInfoError);
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-800">
+        <div className="pixel-border-thick bg-gradient-to-r from-red-700 to-red-800 p-6 max-w-xl w-full text-center">
+          <h2 className="text-2xl font-black text-red-100 mb-3 pixel-text">ERROR</h2>
+          <p className="text-red-200 mb-4 text-sm font-bold">{teamInfoError}</p>
+          <button
+            onClick={() => navigate('/modules')}
+            className="mt-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded font-bold pixel-border"
+          >
+            Back to Modules
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
+  // If still loading session data, show loading
+  if (loadingIds) {
+    console.log('[Level2Simulation][DEBUG] Still loading session data');
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-800">
+        <div className="text-white text-lg font-bold animate-pulse">Loading session...</div>
+      </div>
+    );
+  }
+  
   if (canAccessLevel2 === null) {
+    console.log('[Level2Simulation][DEBUG] Checking eligibility...');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-800">
         <div className="text-white text-lg font-bold animate-pulse">Checking eligibility...</div>
@@ -219,9 +322,9 @@ const Level2Simulation: React.FC = () => {
       </div>
     );
   }
-
-  // Block simulation UI until fullName is set and congrats modal is finished
-  if (canAccessLevel2 && !fullName) {
+  
+  // Block simulation UI until fullName is set or timeout reached
+  if (canAccessLevel2 && !fullName && !allowProceedWithoutFullName) {
     console.log('[Level2Simulation][DEBUG] Waiting for fullName before rendering simulation UI. canAccessLevel2 =', canAccessLevel2, 'fullName =', fullName);
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-800">
@@ -488,12 +591,6 @@ const Level2Simulation: React.FC = () => {
       </div>
     </div>
   );
-// Stop timer if game is completed
-useEffect(() => {
-  if (gameCompleted) {
-    setTimerActive(false);
-  }
-}, [gameCompleted]);
 };
 
 export default Level2Simulation;
