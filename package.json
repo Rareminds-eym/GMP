@@ -17,6 +17,7 @@
     "@reduxjs/toolkit": "^2.2.1",
     "@supabase/supabase-js": "^2.50.2",
     "canvas-confetti": "^1.9.3",
+    "client-s3": "github:aws-sdk/client-s3",
     "dexie": "^4.0.11",
     "framer-motion": "^12.23.0",
     "jspdf": "^3.0.1",
