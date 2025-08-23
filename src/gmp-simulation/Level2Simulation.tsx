@@ -31,38 +31,13 @@ const showWalkthroughVideo = () => {
   window.open(videoUrl, '_blank');
 };
 
-const startGame = async () => {
-  // Clear saved progress and start fresh
-  const questions = []; // Replace with logic to fetch or generate questions
-  const initialAnswers = questions.map(() => ({ solution: "" }));
-
-  setShowCountdown(true);
-  setCountdownNumber(3);
-  setTimerActive(false);
-
-  let i = 3;
-  const interval = setInterval(() => {
-    i--;
-    setCountdownNumber(i);
-    if (i === 0) {
-      clearInterval(interval);
-      setShowCountdown(false);
-      setShowLevel2Card(true);
-      setTimerActive(true);
-    }
-  }, 1000);
-
-  setHasSavedProgress(false);
-  setSavedProgressInfo(null);
-};
-
 const Level2Simulation: React.FC = () => {
   const navigate = useNavigate();
   // --- All hooks must be at the top level, before any early returns ---
   const [canAccessLevel2, setCanAccessLevel2] = useState<boolean | null>(null);
   const [hideProgress, setHideProgress] = React.useState(false);
   const [showLevelModal, setShowLevelModal] = useState(false);
-  const [gameCompleted, setGameCompleted] = useState(false); // Ensure gameCompleted is defined
+  const [gameCompleted, setGameCompleted] = useState(false);
   const { session_id, email, teamInfoError, loadingIds } = useGameSession();
   const [showLevel2Card, setShowLevel2Card] = useState(false);
   const [showCountdown, setShowCountdown] = useState(false);
@@ -78,13 +53,6 @@ const Level2Simulation: React.FC = () => {
   const [timerActive, setTimerActive] = useState(false);
   const [timerValue, setTimerValue] = useState(INITIAL_TIME);
   const [isFirstTime, setIsFirstTime] = useState(true);
-  const [hasSavedProgress, setHasSavedProgress] = useState(false);
-  const [savedProgressInfo, setSavedProgressInfo] = useState<{
-    currentQuestion: number;
-    totalQuestions: number;
-    answeredQuestions: number;
-    timeRemaining: number;
-  } | null>(null);
 
   // Restore progress on mount
   useEffect(() => {
@@ -465,30 +433,35 @@ const Level2Simulation: React.FC = () => {
           </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-          {hasSavedProgress ? (
-            <button
-              onClick={() => {
-                if (isHackathonCompleted()) {
-                  showCompletionModal();
-                } else {
-                  continueGame();
+          <button
+            onClick={() => {
+              // Set session_id and email in sessionStorage if available
+              if (session_id && email) {
+                window.sessionStorage.setItem('session_id', session_id);
+                window.sessionStorage.setItem('email', email);
+                console.log('[DEBUG] Set session_id and email in sessionStorage:', session_id, email);
+              } else {
+                console.warn('[DEBUG] session_id or email missing, not set in sessionStorage');
+              }
+              setShowCountdown(true);
+              setCountdownNumber(3);
+              setTimerActive(false); // Ensure timer is not running during countdown
+              let i = 3;
+              const interval = setInterval(() => {
+                i--;
+                setCountdownNumber(i);
+                if (i === 0) {
+                  clearInterval(interval);
+                  setShowCountdown(false);
+                  setShowLevel2Card(true);
+                  setTimerActive(true); // Start timer after countdown
                 }
-              }}
-              className={`pixel-border text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm ${isHackathonCompleted()
-                ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500"
-                : "bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500"
-              }`}
-            >
-              {isHackathonCompleted() ? "HL-2 COMPLETED" : "CONTINUE HACKATHON"}
-            </button>
-          ) : (
-            <button
-              onClick={startGame}
-              className="pixel-border bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm"
-            >
-              START HACKATHON
-            </button>
-          )}
+              }, 1000);
+            }}
+            className="pixel-border bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm"
+          >
+            {isFirstTime ? "START HACKATHON" : "CONTINUE"}
+          </button>
           <button
             onClick={showWalkthroughVideo}
             className="pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm flex items-center gap-2"
@@ -515,12 +488,12 @@ const Level2Simulation: React.FC = () => {
       </div>
     </div>
   );
-};
-
-export default Level2Simulation;
+// Stop timer if game is completed
 useEffect(() => {
   if (gameCompleted) {
     setTimerActive(false);
   }
 }, [gameCompleted]);
+};
+
 export default Level2Simulation;
