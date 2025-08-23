@@ -8,32 +8,32 @@ export interface Level2Screen3Progress {
   user_id: string;
   email: string;
   
-  // Idea statement fields (new stage 1)
-  idea_statement_what: string;
-  idea_statement_who: string;
-  idea_statement_how: string;
+  // Idea statement fields (stage 1)
+  stage1_idea_what: string;
+  stage1_idea_who: string;
+  stage1_idea_how: string;
   idea_statement?: string; // Computed field
   
-  // Form data fields
-  problem: string;
-  technology: string;
-  collaboration: string;
-  creativity: string;
-  speed_scale: string;
-  impact: string;
-  reflection: string;
+  // Form data fields with stage numbers
+  stage2_problem: string;
+  stage3_technology: string;
+  stage4_collaboration: string;
+  stage5_creativity: string;
+  stage6_speed_scale: string;
+  stage7_impact: string;
+  stage10_reflection: string;
   
-  // Final statement fields
-  final_problem: string;
-  final_technology: string;
-  final_collaboration: string;
-  final_creativity: string;
-  final_speed_scale: string;
-  final_impact: string;
+  // Final statement fields (stage 8)
+  stage8_final_problem: string;
+  stage8_final_technology: string;
+  stage8_final_collaboration: string;
+  stage8_final_creativity: string;
+  stage8_final_speed_scale: string;
+  stage8_final_impact: string;
   
-  // File storage
-  uploaded_file_name?: string;
-  uploaded_file_data?: string;
+  // Prototype fields (stage 9)
+  stage9_prototype_file_name?: string;
+  stage9_prototype_file_data?: string;
   
   // Progress tracking
   current_stage: number;
@@ -107,25 +107,25 @@ export const useLevel2Screen3Progress = (): UseLevel2Screen3ProgressReturn => {
     
     return {
       // Idea statement fields (stage 1)
-      idea_statement_what: ideaParts.what,
-      idea_statement_who: ideaParts.who,
-      idea_statement_how: ideaParts.how,
+      stage1_idea_what: ideaParts.what,
+      stage1_idea_who: ideaParts.who,
+      stage1_idea_how: ideaParts.how,
       
-      // Other form data fields
-      problem: formData.problem || '',
-      technology: formData.technology || '',
-      collaboration: formData.collaboration || '',
-      creativity: formData.creativity || '',
-      speed_scale: formData.speedScale || '',
-      impact: formData.impact || '',
-      reflection: formData.reflection || '',
-      final_problem: formData.finalProblem || '',
-      final_technology: formData.finalTechnology || '',
-      final_collaboration: formData.finalCollaboration || '',
-      final_creativity: formData.finalCreativity || '',
-      final_speed_scale: formData.finalSpeedScale || '',
-      final_impact: formData.finalImpact || '',
-      uploaded_file_name: formData.file?.name,
+      // Form data fields with stage numbers
+      stage2_problem: formData.problem || '',
+      stage3_technology: formData.technology || '',
+      stage4_collaboration: formData.collaboration || '',
+      stage5_creativity: formData.creativity || '',
+      stage6_speed_scale: formData.speedScale || '',
+      stage7_impact: formData.impact || '',
+      stage10_reflection: formData.reflection || '',
+      stage8_final_problem: formData.finalProblem || '',
+      stage8_final_technology: formData.finalTechnology || '',
+      stage8_final_collaboration: formData.finalCollaboration || '',
+      stage8_final_creativity: formData.finalCreativity || '',
+      stage8_final_speed_scale: formData.finalSpeedScale || '',
+      stage8_final_impact: formData.finalImpact || '',
+      stage9_prototype_file_name: formData.file?.name,
       current_stage: currentStage,
       completed_stages: completedStages,
       progress_percentage: calculateProgressPercentage(completedStages),
@@ -137,25 +137,25 @@ export const useLevel2Screen3Progress = (): UseLevel2Screen3ProgressReturn => {
   const progressToFormData = useCallback((progressData: Level2Screen3Progress): StageFormData => {
     // Reconstruct the ideaStatement from the individual parts
     let ideaStatement = '';
-    if (progressData.idea_statement_what || progressData.idea_statement_who || progressData.idea_statement_how) {
-      ideaStatement = `I want to solve ${progressData.idea_statement_what || ''} for ${progressData.idea_statement_who || ''} by ${progressData.idea_statement_how || ''}`;
+    if (progressData.stage1_idea_what || progressData.stage1_idea_who || progressData.stage1_idea_how) {
+      ideaStatement = `I want to solve ${progressData.stage1_idea_what || ''} for ${progressData.stage1_idea_who || ''} by ${progressData.stage1_idea_how || ''}`;
     }
     
     return {
       ideaStatement: ideaStatement,
-      problem: progressData.problem || '',
-      technology: progressData.technology || '',
-      collaboration: progressData.collaboration || '',
-      creativity: progressData.creativity || '',
-      speedScale: progressData.speed_scale || '',
-      impact: progressData.impact || '',
-      reflection: progressData.reflection || '',
-      finalProblem: progressData.final_problem || '',
-      finalTechnology: progressData.final_technology || '',
-      finalCollaboration: progressData.final_collaboration || '',
-      finalCreativity: progressData.final_creativity || '',
-      finalSpeedScale: progressData.final_speed_scale || '',
-      finalImpact: progressData.final_impact || '',
+      problem: progressData.stage2_problem || '',
+      technology: progressData.stage3_technology || '',
+      collaboration: progressData.stage4_collaboration || '',
+      creativity: progressData.stage5_creativity || '',
+      speedScale: progressData.stage6_speed_scale || '',
+      impact: progressData.stage7_impact || '',
+      reflection: progressData.stage10_reflection || '',
+      finalProblem: progressData.stage8_final_problem || '',
+      finalTechnology: progressData.stage8_final_technology || '',
+      finalCollaboration: progressData.stage8_final_collaboration || '',
+      finalCreativity: progressData.stage8_final_creativity || '',
+      finalSpeedScale: progressData.stage8_final_speed_scale || '',
+      finalImpact: progressData.stage8_final_impact || '',
       file: null // File objects can't be restored from database
     };
   }, []);
@@ -247,7 +247,7 @@ export const useLevel2Screen3Progress = (): UseLevel2Screen3ProgressReturn => {
             reader.onerror = reject;
             reader.readAsDataURL(formData.file!);
           });
-          progressData.uploaded_file_data = fileBase64;
+          progressData.stage9_prototype_file_data = fileBase64;
         } catch (fileError) {
           console.warn('Could not convert file to base64:', fileError);
         }
@@ -385,25 +385,25 @@ export const useLevel2Screen3Progress = (): UseLevel2Screen3ProgressReturn => {
 export const convertProgressToFormData = (progressData: Level2Screen3Progress): StageFormData => {
   // Reconstruct the ideaStatement from the individual parts
   let ideaStatement = '';
-  if (progressData.idea_statement_what || progressData.idea_statement_who || progressData.idea_statement_how) {
-    ideaStatement = `I want to solve ${progressData.idea_statement_what || ''} for ${progressData.idea_statement_who || ''} by ${progressData.idea_statement_how || ''}`;
+  if (progressData.stage1_idea_what || progressData.stage1_idea_who || progressData.stage1_idea_how) {
+    ideaStatement = `I want to solve ${progressData.stage1_idea_what || ''} for ${progressData.stage1_idea_who || ''} by ${progressData.stage1_idea_how || ''}`;
   }
   
   return {
     ideaStatement: ideaStatement,
-    problem: progressData.problem || '',
-    technology: progressData.technology || '',
-    collaboration: progressData.collaboration || '',
-    creativity: progressData.creativity || '',
-    speedScale: progressData.speed_scale || '',
-    impact: progressData.impact || '',
-    reflection: progressData.reflection || '',
-    finalProblem: progressData.final_problem || '',
-    finalTechnology: progressData.final_technology || '',
-    finalCollaboration: progressData.final_collaboration || '',
-    finalCreativity: progressData.final_creativity || '',
-    finalSpeedScale: progressData.final_speed_scale || '',
-    finalImpact: progressData.final_impact || '',
+    problem: progressData.stage2_problem || '',
+    technology: progressData.stage3_technology || '',
+    collaboration: progressData.stage4_collaboration || '',
+    creativity: progressData.stage5_creativity || '',
+    speedScale: progressData.stage6_speed_scale || '',
+    impact: progressData.stage7_impact || '',
+    reflection: progressData.stage10_reflection || '',
+    finalProblem: progressData.stage8_final_problem || '',
+    finalTechnology: progressData.stage8_final_technology || '',
+    finalCollaboration: progressData.stage8_final_collaboration || '',
+    finalCreativity: progressData.stage8_final_creativity || '',
+    finalSpeedScale: progressData.stage8_final_speed_scale || '',
+    finalImpact: progressData.stage8_final_impact || '',
     file: null // File objects can't be restored from database
   };
 };

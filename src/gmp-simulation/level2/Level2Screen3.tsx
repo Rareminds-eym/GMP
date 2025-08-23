@@ -1,23 +1,23 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { FileText, Globe, Lightbulb, Rocket, Sparkles, Target, Upload, Users, Zap } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDeviceLayout } from '../../hooks/useOrientation';
 import { supabase } from '../../lib/supabase';
 import { hackathonData } from '../HackathonData';
 import { useAuth } from './../../contexts/AuthContext';
-import { useDeviceLayout } from '../../hooks/useOrientation';
-import { Lightbulb, Users, Zap, Target, Rocket, Globe, FileText, Sparkles, Upload } from 'lucide-react';
-import { StageData, StageFormData } from './types';
+import BriefPopup from './components/BriefPopup';
+import ConfirmationModal from './components/ConfirmationModal';
 import Header from './components/Header';
+import LevelCompletionPopup from './components/LevelCompletionPopup';
+import NavigationBar from './components/NavigationBar';
 import ProgressTrack from './components/ProgressTrack';
 import StageContent from './components/StageContent';
-import NavigationBar from './components/NavigationBar';
-import ConfirmationModal from './components/ConfirmationModal';
-import LevelCompletionPopup from './components/LevelCompletionPopup';
-import BriefPopup from './components/BriefPopup';
+import { StageData, StageFormData } from './types';
 // import ProgressIndicator from './components/ProgressIndicator';
+import LoadingScreen from './components/LoadingScreen';
 import ResetProgressModal from './components/ResetProgressModal';
 import Toast from './components/Toast';
-import LoadingScreen from './components/LoadingScreen';
-import { useLevel2Screen3Progress, convertProgressToFormData } from './hooks/useLevel2Screen3Progress';
+import { convertProgressToFormData, useLevel2Screen3Progress } from './hooks/useLevel2Screen3Progress';
 
 const Level2Screen3: React.FC = () => {
   const [selectedCase, setSelectedCase] = useState<{ email: string; case_id: number; updated_at: string, description?: string } | null>(null);
@@ -624,7 +624,7 @@ const Level2Screen3: React.FC = () => {
               <>
                 Congratulations! You have completed all stages of Level 2.
                 <br />
-                The results will be announced via email, and you can also check them on our website: <a href="https://rareminds.in" target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8', textDecoration: 'underline' }}>rareminds.in</a>
+                The results will be announced via email, and you can also check them on our website: <a href="https://rareminds.in/hackathons" target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8', textDecoration: 'underline' }}>rareminds.in/hackathons</a>
               </>
             }
           />
