@@ -585,18 +585,16 @@ const Level2Screen3: React.FC<Level2Screen3Props> = ({ timer }) => {
           )}
 
           {/* Progress Track */}
-          {!isMobileHorizontal && (
-            <ProgressTrack 
-              stages={stages}
-              currentStage={stage}
-              isStageComplete={isStageComplete}
-              onStageClick={setStage}
-              progress={progress}
-              isMobileHorizontal={isMobileHorizontal}
-              isAnimating={isAnimating}
-              setIsAnimating={setIsAnimating}
-            />
-          )}
+          <ProgressTrack 
+            stages={stages}
+            currentStage={stage}
+            isStageComplete={isStageComplete}
+            onStageClick={setStage}
+            progress={progress}
+            isMobileHorizontal={isMobileHorizontal}
+            isAnimating={isAnimating}
+            setIsAnimating={setIsAnimating}
+          />
 
           {/* Stage Content */}
           <StageContent 
