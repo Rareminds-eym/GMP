@@ -1,4 +1,3 @@
-
 import { AlertTriangle, Clock, Eye, Factory, Play, Trophy } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -437,6 +436,7 @@ const GameEngine: React.FC<GmpSimulationProps> = ({
     fetchTeamInfo();
   }, []);
 
+  // Load saved progress when session_id and email are available
   // Load saved progress when session_id and email are available
   useEffect(() => {
     const loadSavedProgress = async () => {

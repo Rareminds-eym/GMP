@@ -445,14 +445,15 @@ const HomeScreen: React.FC = () => {
                 <Button
                   onClick={btn.onClick}
                   {...(btn.variant ? { variant: btn.variant } : {})}
-                  className={
+                  disabled={btn.label === "View Scores" ? true : (btn.shouldDisable && isGameLocked)}
+                  className={`${
                     layout.isMobile && layout.isHorizontal
                       ? "px-0.5 py-0 !text-[14px] min-w-[60px] !h-9 !mb-2 rounded"
                       : "px-3 py-2 text-base min-w-[120px] !h-12 rounded-lg"
-                  }
+                  } ${btn.label === "View Scores" ? "!opacity-100 !cursor-not-allowed" : ""}`}
                 >
                   <div className="flex items-center justify-center gap-2">
-                    {btn.shouldDisable && isGameLocked && (
+                    {((btn.shouldDisable && isGameLocked) || btn.label === "View Scores") && (
                       <Icon icon="mdi:lock" className="w-4 h-4" />
                     )}
                     {btn.label}
