@@ -120,7 +120,8 @@ const Level2Timer: React.FC<Level2TimerProps> = ({
     };
   }, [autoSave, onSaveTimer, timeRemaining]);
 
-  const minutes = Math.floor(timeRemaining / 60);
+  const hours = Math.floor(timeRemaining / 3600);
+  const minutes = Math.floor((timeRemaining % 3600) / 60);
   const seconds = timeRemaining % 60;
   const percentage = (timeRemaining / initialTime) * 100;
   const getTextColor = () => {
@@ -130,7 +131,7 @@ const Level2Timer: React.FC<Level2TimerProps> = ({
 
   return (
     <div className={`text-xs font-mono ${getTextColor()}`}>
-      {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+      {String(hours).padStart(2, '0')}:{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
     </div>
   );
 };
