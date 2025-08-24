@@ -433,9 +433,14 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
               <span className="text-sm">PROCEED</span>
               <ChevronRight className="w-4 h-4" />
             </button>
-            {/* Confirm Modal (simple) */}
-            {showConfirm && (
-              <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 font-[Verdana,Arial,sans-serif]">
+          </div>
+          {/* Confirm Modal (simple) and overlay */}
+          {showConfirm && (
+            <>
+              {/* Overlay to dim and block main content */}
+              <div className="fixed inset-0 bg-black bg-opacity-60 z-40"></div>
+              {/* Modal always above overlay */}
+              <div className="fixed inset-0 flex items-center justify-center z-50 p-4 font-[Verdana,Arial,sans-serif]">
                 <div className="pixel-border-thick bg-yellow-100 w-full max-w-md text-center relative overflow-hidden animate-slideIn p-6 font-[Verdana,Arial,sans-serif]">
                   <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
                   <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
@@ -472,8 +477,8 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
                   </div>
                 </div>
               </div>
-            )}
-          </div>
+            </>
+          )}
 
           {/* Correct Violation & Root Cause - Right Panel (unchanged) */}
           <div className="w-1/3 flex flex-col min-h-0">

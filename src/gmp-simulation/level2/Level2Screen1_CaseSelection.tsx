@@ -8,6 +8,8 @@ import { hackathonData } from '../HackathonData';
 import ConfirmModal from './ui/ConfirmModal';
 import CaseQuestionModal from './ui/CaseQuestionModal';
 
+import LoadingScreen from './components/LoadingScreen';
+
 interface TeamMember {
   name: string;
   email: string;
@@ -128,7 +130,7 @@ const Level2Screen1_CaseSelection: React.FC<Level2Screen1Props> = ({
   // allCases is now set by fetchLevel1CasesForTeam and includes member.email for each case
 
   if (loading) {
-    return <div className="p-6 text-white">Loading cases from Level 1...</div>;
+    return <LoadingScreen title="CASE SELECTION QUEST" message="Loading cases from Level 1..." isMobileHorizontal={isMobile && isHorizontal} />;
   }
   if (error) {
     return <div className="p-6 text-red-400">{error}</div>;
