@@ -78,17 +78,29 @@ const Level2Screen2: React.FC<Level2Screen2Props> = ({ onProceedConfirmed, timer
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user || !user.id) throw new Error("User not authenticated");
+      
+      // Get existing progress to merge completed screens
+      const existingProgress = await restoreHL2Progress(user.id);
+      const existingCompletedScreens = existingProgress?.completed_screens || [];
+      
+      // Merge current screen with existing completed screens
+      const completedScreens = [...existingCompletedScreens];
+      if (!completedScreens.includes(2)) {
+        completedScreens.push(2);
+      }
+      
       const progressToSave = {
         user_id: user.id,
-        current_screen: 2,
-        completed_screens: [2], // Add logic to merge with previous completed screens
+        current_screen: 3, // Move to next screen
+        completed_screens: completedScreens,
         timer: restoredTimer,
       };
       console.log('[Level2Screen2] Saving progress:', progressToSave);
       await saveHL2Progress(progressToSave);
       if (onProceedConfirmed) onProceedConfirmed();
-    } catch (err) {
-      setError("Failed to save progress");
+    } catch (err: any) {
+      console.error('[Level2Screen2] Error saving progress:', err);
+      setError("Failed to save progress: " + (err.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }

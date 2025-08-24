@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Upload, CheckCircle, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { StageProps } from '../../types';
 import { uploadFileToS3 } from '../../../../utils/awsConfig';
@@ -11,6 +11,20 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
   const [retryCount, setRetryCount] = useState(0);
   const [isDragOver, setIsDragOver] = useState(false);
   const MAX_RETRY_ATTEMPTS = 3;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Focus the file input when the component mounts (stage changes)
+  useEffect(() => {
+    const focusTimeout = setTimeout(() => {
+      if (fileInputRef.current) {
+        // For file inputs, we'll focus the label instead since file input focus doesn't show visually
+        // But we can still programmatically focus it
+        fileInputRef.current.focus();
+      }
+    }, 100); // Small delay to ensure the component is fully rendered
+    
+    return () => clearTimeout(focusTimeout);
+  }, []); // Empty dependency array means this runs once when component mounts
 
   const uploadFile = async (file: File, isRetry = false) => {
     try {
@@ -224,35 +238,35 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
 
   return (
     <div className={`${isMobileHorizontal ? 'space-y-3' : 'space-y-8'} animate-fadeIn`}>
-      <div className={`text-center ${isMobileHorizontal ? 'mb-3' : 'mb-8'}`}>
-        <div className="pixel-border-thick bg-gradient-to-br from-gray-900/30 to-slate-900/30 p-6 relative overflow-hidden">
-          <div className="absolute inset-0 bg-pixel-pattern opacity-5"></div>
-          <div className="relative z-10">
-            <div className="flex items-center justify-center space-x-3 mb-4">
-              <div className="pixel-border bg-gradient-to-br from-gray-500 to-slate-500 p-3 relative overflow-hidden">
-                <Upload className="w-8 h-8 text-white" />
-                <div className="absolute inset-0 bg-gradient-to-br from-gray-500 to-slate-500 blur-sm opacity-50 -z-10"></div>
-              </div>
-              <div>
-                <h2 className={`pixel-text ${isMobileHorizontal ? 'text-xl' : 'text-4xl'} font-black text-white mb-1`} style={{ textShadow: '3px 3px 0px rgba(0,0,0,0.7), 0 0 20px rgba(100,116,139,0.3)' }}>
-                  PROTOTYPE/DEMO/SKETCH
-                </h2>
-                <div className="flex items-center justify-center space-x-2">
-                  <span className="pixel-text text-xs font-bold text-yellow-400 bg-yellow-900/30 px-2 py-1 rounded">
-                    OPTIONAL
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
       <div className="space-y-6">
         <div className="group">
           <div className="pixel-border-thick bg-gray-900/50 p-4 relative overflow-hidden group-hover:bg-gray-900/70 transition-all duration-300">
             <div className="absolute inset-0 bg-pixel-pattern opacity-5"></div>
             <div className="relative z-10">
+              {/* Stage Header moved inside */}
+              <div className={`text-center ${isMobileHorizontal ? 'mb-3' : 'mb-6'}`}>
+                <div className="pixel-border-thick bg-gradient-to-br from-gray-900/30 to-slate-900/30 p-6 relative overflow-hidden">
+                  <div className="absolute inset-0 bg-pixel-pattern opacity-5"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-center space-x-3 mb-4">
+                      <div className="pixel-border bg-gradient-to-br from-gray-500 to-slate-500 p-3 relative overflow-hidden">
+                        <Upload className="w-8 h-8 text-white" />
+                        <div className="absolute inset-0 bg-gradient-to-br from-gray-500 to-slate-500 blur-sm opacity-50 -z-10"></div>
+                      </div>
+                      <div>
+                        <h2 className={`pixel-text ${isMobileHorizontal ? 'text-xl' : 'text-4xl'} font-black text-white mb-1`} style={{ textShadow: '3px 3px 0px rgba(0,0,0,0.7), 0 0 20px rgba(100,116,139,0.3)' }}>
+                          PROTOTYPE/DEMO/SKETCH
+                        </h2>
+                        <div className="flex items-center justify-center space-x-2">
+                          <span className="pixel-text text-xs font-bold text-yellow-400 bg-yellow-900/30 px-2 py-1 rounded">
+                            OPTIONAL
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <p className={`pixel-text text-gray-300 font-bold ${isMobileHorizontal ? 'text-sm' : 'text-base'} mb-2 leading-relaxed text-center`}>
                 Upload your prototype, demo, or sketch as a PDF document.
               </p>
@@ -288,6 +302,7 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
                     {isDragOver ? 'RELEASE TO UPLOAD PDF' : 'DRAG & DROP OR CLICK TO BROWSE'}
                   </span>
                   <input
+                    ref={fileInputRef}
                     id="file-upload"
                     type="file"
                     accept="application/pdf"

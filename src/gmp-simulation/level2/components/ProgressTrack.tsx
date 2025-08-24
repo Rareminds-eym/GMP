@@ -68,17 +68,12 @@ const ProgressTrack: React.FC<ProgressTrackProps> = ({
           {/* Stage Navigation Slider */}
           <div 
             ref={sliderRef}
-            className="overflow-x-auto pb-2"
+            className="overflow-x-auto pb-2 scrollbar-hide"
             style={{
               scrollbarWidth: 'none',
               msOverflowStyle: 'none'
             }}
           >
-            <style jsx>{`
-              div::-webkit-scrollbar {
-                display: none;
-              }
-            `}</style>
             <div className="flex items-center justify-center space-x-2 min-w-max px-1">
               {stages.map((stageData, index) => {
                 const stageNumber = index + 1;
