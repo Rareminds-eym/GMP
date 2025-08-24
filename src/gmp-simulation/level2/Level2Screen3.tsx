@@ -658,6 +658,7 @@ const Level2Screen3: React.FC<Level2Screen3Props> = ({ timer }) => {
           <LevelCompletionPopup
             show={showCompletionPopup && isLevelCompleted}
             onContinue={() => navigate('/modules')}
+            isMobileHorizontal={isMobileHorizontal}
             message={
               <>
                 Congratulations! You have completed all stages of Level 2.
