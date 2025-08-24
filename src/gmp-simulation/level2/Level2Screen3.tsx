@@ -374,7 +374,8 @@ const Level2Screen3: React.FC<Level2Screen3Props> = ({ timer }) => {
       bgColor: "from-pink-900/20 to-yellow-900/20",
       accent: "pink",
       description: "Optional: Show your solution in action",
-      caseNumber: 9
+      caseNumber: 9,
+      isOptional: true
     },
     { 
       icon: Lightbulb, 
