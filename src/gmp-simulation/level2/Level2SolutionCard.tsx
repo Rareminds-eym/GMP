@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
-import ConfirmModal from "./ui/ConfirmModal";
-import { CheckCircle, Search, Target, AlertTriangle } from "lucide-react";
+import { CheckCircle, Search, Target, AlertTriangle, ChevronRight } from "lucide-react";
 import {
   DndContext,
   DragOverlay,
@@ -24,7 +23,7 @@ interface Level2SolutionCardProps {
   timer: number;
 }
 
-// Draggable Item Component (single solution)
+// Draggable Item Component (solution only)
 interface DraggableItemProps {
   id: string;
   text: string;
@@ -56,15 +55,16 @@ const DraggableItem: React.FC<DraggableItemProps> = ({ id, text, isSelected }) =
   );
 };
 
-// Droppable Zone Component (single solution)
+// Droppable Zone Component (violation/rootCause)
 interface DroppableZoneProps {
   id: string;
+  type: "violation" | "rootCause";
   selectedItem: string;
   children: React.ReactNode;
 }
 
-const DroppableZone: React.FC<DroppableZoneProps> = ({ id, selectedItem, children }) => {
-  const { isOver, setNodeRef } = useDroppable({ id, data: { isDropZone: true } });
+const DroppableZone: React.FC<DroppableZoneProps> = ({ id, type, selectedItem, children }) => {
+  const { isOver, setNodeRef } = useDroppable({ id, data: { type, isDropZone: true } });
   return (
     <div ref={setNodeRef} className="h-full relative font-[Verdana,Arial,sans-serif]">
       {isOver && (
@@ -163,7 +163,7 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
     setPreviousQuestionId(question.id);
   }, [question.id, previousQuestionId]);
 
-  // DnD sensors and collision detection
+  // DnD sensors and collision detection (match Level 1)
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 3 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 0, tolerance: 15 } }),
@@ -172,15 +172,21 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
   const customCollisionDetection = (args: any) => {
     const pointerCollisions = pointerWithin(args);
     if (pointerCollisions.length > 0) {
-      const validCollisions = pointerCollisions.filter((collision: any) => collision.id === "solution-zone");
+      const validCollisions = pointerCollisions.filter((collision: any) => {
+        const validIds = ["violation-zone", "rootCause-zone"];
+        return validIds.includes(collision.id);
+      });
       if (validCollisions.length > 0) return validCollisions;
     }
     const rectCollisions = rectIntersection(args);
-    const validRectCollisions = rectCollisions.filter((collision: any) => collision.id === "solution-zone");
+    const validRectCollisions = rectCollisions.filter((collision: any) => {
+      const validIds = ["violation-zone", "rootCause-zone"];
+      return validIds.includes(collision.id);
+    });
     return validRectCollisions.length > 0 ? validRectCollisions : [];
   };
 
-  // Shuffle solution options for variety
+  // Shuffle function
   const shuffleArray = <T,>(array: T[]): T[] => {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
@@ -189,9 +195,17 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
     }
     return shuffled;
   };
-  const shuffledOptions = React.useMemo(() => shuffleArray(question.solutionOptions), [question.solutionOptions]);
+  // Show only solutionOptions as draggable options
+  const solutionOptions = React.useMemo(() =>
+    shuffleArray(question.solutionOptions).map((option, index) => ({
+      id: `solution-${index}`,
+      text: option,
+      isSelected: selectedSolution === option,
+    })),
+    [question.solutionOptions, selectedSolution]
+  );
 
-  // Drag and Drop event handlers
+  // Drag and Drop event handlers (solution only)
   const handleDragStart = (event: any) => {
     const { active } = event;
     const draggedData = active.data.current as { text: string };
@@ -204,27 +218,16 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
     const { active, over } = event;
     setActiveItem(null);
     if (!over) return;
-    if (over.id !== "solution-zone") return;
+    if (over.id !== "violation-zone") return;
     const dropZoneData = over.data.current as { isDropZone?: boolean };
     if (!dropZoneData?.isDropZone) return;
     const draggedData = active.data.current as { text: string };
     if (!draggedData || !draggedData.text) return;
-    // Only allow drop if the dragged id matches a valid option
-    if (shuffledOptions.some(opt => opt === draggedData.text)) {
-      setSelectedSolution(draggedData.text);
-    }
+    setSelectedSolution(draggedData.text);
   };
 
-  // Save selected solution to Supabase
+  // Save selected solution to Supabase (solution only)
   const saveSelectedSolution = async (solution: string) => {
-    console.log('[DEBUG] Attempting to save selected solution:', {
-      session_id,
-      email,
-      module_number,
-      question_index,
-      solution,
-      correctSolution: question.correctSolution
-    });
     if (!session_id || !email) {
       console.warn('[DEBUG] Missing session_id or email, aborting save.');
       return;
@@ -247,8 +250,6 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
       ], { onConflict: 'session_id,email,module_number' });
     if (error) {
       console.error('[DEBUG] Error saving selected solution:', error.message, error.details);
-    } else {
-      console.log('[DEBUG] Save successful. Supabase response:', data);
     }
   };
 
@@ -300,7 +301,7 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
             </div>
             <p className="text-cyan-50 text-sm font-bold">
               {question.caseFile} <br />
-              Drag the best solution to the drop zone. The correct violation and root cause are shown for reference.
+              Drag the correct Solution to the drop zone.
             </p>
             {showCaseChangeIndicator && (
               <div className="mt-2 flex items-center space-x-2">
@@ -313,7 +314,6 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
           </div>
         )}
 
-
         {/* Main Content - Match Level 1 UI for first two columns */}
         <div className="relative z-10 flex-1 flex p-2 space-x-3 min-h-0">
           {/* OPTIONS AREA - Left Panel (matches Level 1) */}
@@ -324,13 +324,13 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
               <div className="relative z-20 flex flex-col h-full min-h-0">
                 <div className="flex items-center space-x-2 mb-3 flex-shrink-0">
                   <div className="w-6 h-6 bg-cyan-500 pixel-border flex items-center justify-center">
-                    <CheckCircle className="w-4 h-4 text-cyan-900" />
+                    <Target className="w-4 h-4 text-cyan-900" />
                   </div>
                   <div>
-                    <h2 className="text-sm font-black text-cyan-300 pixel-text">SOLUTION OPTIONS</h2>
+                    <h2 className="text-sm font-black text-cyan-300 pixel-text">SOLUTION</h2>
                     {!isMobileHorizontal && (
                       <div className="text-xs text-gray-400 font-bold">
-                        ITEMS: {shuffledOptions.length} | DRAG TO ZONE
+                        ITEMS: {solutionOptions.length} | DRAG TO ZONE
                       </div>
                     )}
                   </div>
@@ -338,13 +338,17 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
                 <div className="flex-1 min-h-0 overflow-hidden">
                   <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-cyan-500 scrollbar-track-gray-700">
                     <div className="space-y-2 p-1">
-                      {shuffledOptions.map((option, index) => (
+                      {solutionOptions.map((option, index) => (
                         <div
-                          key={option}
+                          key={option.id}
                           className="animate-slideIn"
                           style={{ animationDelay: `${index * 100}ms` }}
                         >
-                          <DraggableItem id={option} text={option} isSelected={selectedSolution === option} />
+                          <DraggableItem
+                            id={option.id}
+                            text={option.text}
+                            isSelected={option.isSelected}
+                          />
                         </div>
                       ))}
                     </div>
@@ -354,95 +358,121 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
             </div>
           </div>
 
-          {/* DND DROP ZONE - Middle Panel (matches Level 1) */}
-          <div className="flex-1 animate-slideIn flex flex-col min-h-0">
-            <div className="pixel-border-thick bg-gradient-to-br from-cyan-900 to-cyan-800 h-full relative overflow-hidden transition-all duration-300 rounded-lg flex flex-col">
-              {/* Header */}
-              <div className="relative z-10 p-3 flex-shrink-0">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-5 h-5 bg-cyan-800 pixel-border flex items-center justify-center">
-                      <CheckCircle className="w-3 h-3 text-cyan-300" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-black text-white pixel-text">ONE SOLUTION</h3>
-                      <div className="text-cyan-100/80 text-xs">Drop Zone</div>
+          {/* DND DROP ZONES - Middle Panel (only Violation Drop Zone remains) */}
+          <div className="flex-1 flex gap-3 min-h-0">
+            {/* Violation Drop Zone */}
+            <div className="flex-1 animate-slideIn" style={{ animationDelay: "0ms" }}>
+              <div className="pixel-border-thick bg-gradient-to-br from-indigo-900 to-indigo-800 h-full relative overflow-hidden transition-all duration-300 rounded-lg flex flex-col">
+                {/* Header */}
+                <div className="relative z-10 p-3 flex-shrink-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-5 h-5 bg-blue-800 pixel-border flex items-center justify-center">
+                        <Target className="w-3 h-3 text-blue-300" />
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-black text-white pixel-text">ONE SOLUTION</h3>
+                        <div className="text-white/80 text-xs">Scanner Zone</div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              {/* Drop Zone */}
-              <div className="px-3 pb-3 flex-1 min-h-0 overflow-y-auto relative z-10">
-                <DroppableZone id="solution-zone" selectedItem={selectedSolution}>
-                  {selectedSolution ? (
-                    <div className="h-full flex flex-col">
-                      <div className="text-center py-2 border-b border-cyan-700/30">
-                        <div className="w-8 h-8 bg-cyan-800 pixel-border mx-auto mb-1 flex items-center justify-center animate-pulse">
-                          <CheckCircle className="w-5 h-5 text-cyan-300" />
+                {/* Drop Zone */}
+                <div className="px-3 pb-3 flex-1 min-h-0 overflow-y-auto relative z-10">
+                  <DroppableZone id="violation-zone" type="violation" selectedItem={selectedSolution}>
+                    {selectedSolution ? (
+                      <div className="h-full flex flex-col">
+                        <div className="text-center py-2 border-b border-blue-700/30">
+                          <div className="w-8 h-8 bg-blue-800 pixel-border mx-auto mb-1 flex items-center justify-center animate-pulse">
+                            <CheckCircle className="w-5 h-5 text-blue-300" />
+                          </div>
+                          <p className="text-blue-100 font-black pixel-text text-xs">SOLUTION DETECTED!</p>
                         </div>
-                        <p className="text-cyan-100 font-black pixel-text text-xs">SOLUTION SELECTED!</p>
-                      </div>
-                      <div className="flex-1 p-3 w-full">
-                        <div className="w-full">
-                          <div className="pixel-border-thick bg-gradient-to-r from-cyan-900 to-cyan-700 p-3 relative overflow-hidden">
-                            <div className="absolute inset-0 bg-pixel-pattern opacity-20"></div>
-                            <div className="relative z-10 flex items-center mb-2">
-                              <div className="w-6 h-6 bg-cyan-800 pixel-border mr-2 flex items-center justify-center flex-shrink-0">
-                                <CheckCircle className="w-4 h-4 text-cyan-300" />
+                        <div className="flex-1 p-3">
+                          <div className="w-full">
+                            <div className="pixel-border-thick bg-gradient-to-r from-blue-900 to-blue-700 p-3 relative overflow-hidden">
+                              <div className="absolute inset-0 bg-pixel-pattern opacity-20"></div>
+                              <div className="relative z-10">
+                                <div className="flex items-center mb-2">
+                                  <div className="w-6 h-6 bg-blue-800 pixel-border mr-2 flex items-center justify-center flex-shrink-0">
+                                    <Target className="w-4 h-4 text-blue-300" />
+                                  </div>
+                                  <p className="text-white text-xs font-black pixel-text leading-tight">{selectedSolution}</p>
+                                </div>
                               </div>
-                              <p className="text-white text-xs font-bold pixel-text leading-tight">{selectedSolution}</p>
+                              <div className="absolute top-1 right-1 w-2 h-2 bg-blue-800 rounded-full animate-ping"></div>
                             </div>
-                            <div className="absolute top-1 right-1 w-2 h-2 bg-cyan-800 rounded-full animate-ping"></div>
                           </div>
                         </div>
                       </div>
-                      {/* Proceed Button - Fixed Position */}
-                      <></>
-      {/* Proceed Button - Fixed to bottom right of the screen */}
-      <div className="fixed bottom-4 right-4 z-50">
-        <button
-          className={`flex items-center space-x-2 px-6 py-3 pixel-border font-black pixel-text transition-all shadow-lg ${selectedSolution
-            ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white transform hover:scale-105"
-            : "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
-          }`}
-          style={{ minWidth: 120 }}
-          disabled={!selectedSolution}
-          onClick={() => setShowConfirm(true)}
-        >
-          <span className="text-sm">PROCEED</span>
-        </button>
-        <ConfirmModal
-          open={showConfirm}
-          onClose={() => setShowConfirm(false)}
-          onConfirm={() => {
-            setShowConfirm(false);
-            handleProceed();
-          }}
-          confirmText="CONFIRM & PROCEED"
-          title="Proceed to Next Step?"
-          message="Are you sure you want to submit this solution? This action cannot be undone."
-        />
-      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <div className="w-16 h-16 bg-white/20 mx-auto mb-3 flex items-center justify-center rounded-full">
-                        <CheckCircle className="w-8 h-8 text-white/60" />
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="w-16 h-16 bg-white/20 mx-auto mb-3 flex items-center justify-center rounded-full">
+                          <Target className="w-8 h-8 text-white/60" />
+                        </div>
+                        <p className="text-white/80 font-bold text-sm">DROP ZONE</p>
+                        <p className="text-white/60 text-xs">Drag solution here</p>
                       </div>
-                      <p className="text-white/80 font-bold text-sm">DROP ZONE</p>
-                      <p className="text-white/60 text-xs">Drag solution here</p>
-                    </div>
-                  )}
-                </DroppableZone>
+                    )}
+                  </DroppableZone>
+                </div>
               </div>
             </div>
-            <DragOverlay dropAnimation={null}>
-              {activeItem ? (
-                <div className="pixel-border bg-gradient-to-r from-cyan-500 to-blue-500 p-2 cursor-grabbing opacity-95 shadow-2xl pointer-events-none">
-                  <span className="text-white text-xs font-bold pixel-text">{activeItem.text}</span>
+          </div>
+
+          {/* Proceed Button - Fixed Position (matches Level 1) */}
+          <div className="absolute bottom-4 right-4 z-20">
+            <button
+              onClick={() => setShowConfirm(true)}
+              disabled={!selectedSolution}
+              className={`flex items-center space-x-2 px-4 py-3 pixel-border font-black pixel-text transition-all shadow-lg ${selectedSolution
+                ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white transform hover:scale-105"
+                : "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
+                }`}
+            >
+              <span className="text-sm">PROCEED</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            {/* Confirm Modal (simple) */}
+            {showConfirm && (
+              <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 font-[Verdana,Arial,sans-serif]">
+                <div className="pixel-border-thick bg-yellow-100 w-full max-w-md text-center relative overflow-hidden animate-slideIn p-6 font-[Verdana,Arial,sans-serif]">
+                  <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
+                  <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
+                  <button
+                    onClick={() => setShowConfirm(false)}
+                    className="absolute top-2 right-2 z-20 bg-yellow-200 hover:bg-yellow-300 text-yellow-900 rounded-full p-1 shadow pixel-border"
+                    aria-label="Close caution modal"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-center space-x-2 mb-4">
+                      <div className="bg-yellow-400 pixel-border flex items-center justify-center w-8 h-8 animate-bounce relative">
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-yellow-300 opacity-60 animate-ping"></span>
+                        <AlertTriangle className="text-yellow-900 w-5 h-5 relative z-10" />
+                      </div>
+                      <h2 className="font-black text-yellow-900 pixel-text text-lg">CAUTION</h2>
+                    </div>
+                    <div className="mb-6">
+                      <span className="font-bold text-yellow-900 pixel-text text-base">
+                        The selected answer cannot be reverted.
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowConfirm(false);
+                        handleProceed();
+                      }}
+                      className="pixel-border bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 text-yellow-900 font-black pixel-text transition-all duration-200 flex items-center space-x-2 mx-auto py-3 px-6 transform hover:scale-105 shadow-lg"
+                    >
+                      <span className="text-sm">CONFIRM & PROCEED</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
-              ) : null}
-            </DragOverlay>
+              </div>
+            )}
           </div>
 
           {/* Correct Violation & Root Cause - Right Panel (unchanged) */}
@@ -491,6 +521,15 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
             </div>
           </div>
         </div>
+
+        {/* Drag Overlay */}
+        <DragOverlay dropAnimation={null}>
+          {activeItem ? (
+            <div className="pixel-border bg-gradient-to-r from-cyan-500 to-blue-500 p-2 cursor-grabbing transform scale-110 opacity-95 shadow-2xl pointer-events-none" style={{ zIndex: 9999 }}>
+              <span className="text-white text-xs font-black pixel-text">{activeItem.text}</span>
+            </div>
+          ) : null}
+        </DragOverlay>
       </div>
     </DndContext>
   );
