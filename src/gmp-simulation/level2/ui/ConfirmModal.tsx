@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { AlertTriangle, ChevronRight } from "lucide-react";
 import { useDeviceLayout } from '../../../hooks/useOrientation';
+import PopupPortal from '../../../components/ui/PopupPortal';
 
 interface ConfirmModalProps {
   open: boolean;
@@ -22,30 +23,13 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   const { isMobile, isHorizontal } = useDeviceLayout();
   const isMobileHorizontal = isMobile && isHorizontal;
   
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (open) {
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.width = '100%';
-    } else {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-    }
-    
-    return () => {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-    };
-  }, [open]);
-  
   if (!open) return null;
   return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-2 sm:p-4 font-[Verdana,Arial,sans-serif]"
-      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+    <PopupPortal
+      isOpen={open}
+      onClose={onClose}
+      className="bg-black bg-opacity-60 p-2 sm:p-4 font-[Verdana,Arial,sans-serif]"
+      closeOnBackdropClick={false}
     >
       <div 
         className={`pixel-border-thick bg-yellow-100 w-full text-center relative overflow-hidden animate-slideIn font-[Verdana,Arial,sans-serif] ${
@@ -104,7 +88,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </PopupPortal>
   );
 };
 

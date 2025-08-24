@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Upload, CheckCircle, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { StageProps } from '../../types';
 import { uploadFileToS3 } from '../../../../utils/awsConfig';
@@ -11,6 +11,20 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
   const [retryCount, setRetryCount] = useState(0);
   const [isDragOver, setIsDragOver] = useState(false);
   const MAX_RETRY_ATTEMPTS = 3;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Focus the file input when the component mounts (stage changes)
+  useEffect(() => {
+    const focusTimeout = setTimeout(() => {
+      if (fileInputRef.current) {
+        // For file inputs, we'll focus the label instead since file input focus doesn't show visually
+        // But we can still programmatically focus it
+        fileInputRef.current.focus();
+      }
+    }, 100); // Small delay to ensure the component is fully rendered
+    
+    return () => clearTimeout(focusTimeout);
+  }, []); // Empty dependency array means this runs once when component mounts
 
   const uploadFile = async (file: File, isRetry = false) => {
     try {
@@ -288,6 +302,7 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
                     {isDragOver ? 'RELEASE TO UPLOAD PDF' : 'DRAG & DROP OR CLICK TO BROWSE'}
                   </span>
                   <input
+                    ref={fileInputRef}
                     id="file-upload"
                     type="file"
                     accept="application/pdf"

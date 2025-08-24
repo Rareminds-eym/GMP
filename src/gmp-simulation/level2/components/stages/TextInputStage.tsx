@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { CheckCircle } from 'lucide-react';
 
 interface TextInputStageProps {
@@ -26,6 +26,18 @@ const TextInputStage: React.FC<TextInputStageProps> = ({
   borderColor,
   shadowColor
 }) => {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Focus the textarea when the component mounts (stage changes)
+  useEffect(() => {
+    const focusTimeout = setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+      }
+    }, 100); // Small delay to ensure the component is fully rendered
+    
+    return () => clearTimeout(focusTimeout);
+  }, []); // Empty dependency array means this runs once when component mounts
   return (
     <div className={`${isMobileHorizontal ? 'space-y-0.5' : 'space-y-2'} animate-fadeIn`}>
       <div className={`text-center ${isMobileHorizontal ? 'mb-0.5' : 'mb-2'}`}>
@@ -58,6 +70,7 @@ const TextInputStage: React.FC<TextInputStageProps> = ({
               
               <div className="relative">
                 <textarea
+                  ref={textareaRef}
                   className={`pixel-text w-full bg-gray-800/80 text-white font-semibold resize-none focus:outline-none transition-all duration-300 group-hover:bg-gray-800 ${isMobileHorizontal ? 'p-3 min-h-[80px] text-sm' : 'p-5 min-h-[120px] text-base'} border-2 focus:border-${borderColor} hover:border-${borderColor}`}
                   style={{ 
                     borderColor: value.length > 0 ? borderColor : '#6b7280',

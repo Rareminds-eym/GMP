@@ -14,6 +14,7 @@ const FillInBlanksStage: React.FC<FillInBlanksStageProps> = ({
 }) => {
   // Use ref to store the onChange function to avoid infinite loops
   const onChangeRef = useRef(onChange);
+  const firstInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
@@ -62,6 +63,17 @@ const FillInBlanksStage: React.FC<FillInBlanksStageProps> = ({
 
   const isComplete = parts.what.length > 0 && parts.who.length > 0 && parts.how.length > 0;
   const hasAnyContent = parts.what.length > 0 || parts.who.length > 0 || parts.how.length > 0;
+  
+  // Focus the first input when the component mounts (stage changes)
+  useEffect(() => {
+    const focusTimeout = setTimeout(() => {
+      if (firstInputRef.current) {
+        firstInputRef.current.focus();
+      }
+    }, 100); // Small delay to ensure the component is fully rendered
+    
+    return () => clearTimeout(focusTimeout);
+  }, []); // Empty dependency array means this runs once when component mounts
 
   return (
     <div className={`${isMobileHorizontal ? 'space-y-0.5' : 'space-y-2'} animate-fadeIn`}>
@@ -99,6 +111,7 @@ const FillInBlanksStage: React.FC<FillInBlanksStageProps> = ({
                   <div className="flex flex-wrap items-center gap-2 pixel-text font-bold text-white">
                     <span>I want to solve</span>
                     <input
+                      ref={firstInputRef}
                       type="text"
                       className={`pixel-border bg-gray-700/80 text-amber-300 font-semibold px-3 py-2 focus:outline-none focus:bg-gray-700 transition-all duration-300 ${isMobileHorizontal ? 'min-w-[100px] text-sm' : 'min-w-[150px] text-base'}`}
                       style={{ 

@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { collegeCodes as collegeCodeList } from '../../data/collegeCodes';
 import { useDeviceLayout } from '../../hooks/useOrientation';
 import { supabase } from '../../lib/supabase';
+import PopupPortal from '../ui/PopupPortal';
 
 interface AuthFormProps {
   mode: 'login' | 'signup' | 'forgot-password'
@@ -788,7 +789,12 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode, onForgotPasswor
 
             {/* Confirm Details Modal */}
             {showConfirmModal && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+              <PopupPortal
+                isOpen={showConfirmModal}
+                onClose={() => setShowConfirmModal(false)}
+                className="bg-black bg-opacity-60"
+                closeOnBackdropClick={false}
+              >
                 <div className="bg-gray-900 rounded-lg shadow-2xl p-6 w-full max-w-md mx-auto">
                   <h3 className="text-xl font-bold text-white mb-4">Confirm Your Details</h3>
                   <ul className="text-white space-y-2 mb-4">
@@ -826,7 +832,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode, onForgotPasswor
                     </button>
                   </div>
                 </div>
-              </div>
+              </PopupPortal>
             )}
             {/* Show join code to team leader after signup */}
             {generatedJoinCode && formData.isTeamLeader && (

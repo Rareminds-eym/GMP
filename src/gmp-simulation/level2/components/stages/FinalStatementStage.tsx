@@ -5,6 +5,7 @@ import { StageProps } from '../../types';
 const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMobileHorizontal }) => {
   // Use ref to store the onChange function to avoid infinite loops
   const onChangeRef = useRef(onFormDataChange);
+  const firstInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     onChangeRef.current = onFormDataChange;
   }, [onFormDataChange]);
@@ -45,6 +46,17 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
                     parts.speedScale.length > 0 && parts.impact.length > 0;
   const hasAnyContent = Object.values(parts).some(part => part.length > 0);
   const completedCount = Object.values(parts).filter(part => part.length > 0).length;
+  
+  // Focus the first input when the component mounts (stage changes)
+  useEffect(() => {
+    const focusTimeout = setTimeout(() => {
+      if (firstInputRef.current) {
+        firstInputRef.current.focus();
+      }
+    }, 100); // Small delay to ensure the component is fully rendered
+    
+    return () => clearTimeout(focusTimeout);
+  }, []); // Empty dependency array means this runs once when component mounts
 
   return (
     <div className={`${isMobileHorizontal ? 'space-y-0.5' : 'space-y-2'} animate-fadeIn`}>
@@ -82,6 +94,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
                   <div className="flex flex-wrap items-center gap-2 pixel-text font-bold text-white">
                     <span className="text-indigo-300">"Our innovation solves</span>
                     <input
+                      ref={firstInputRef}
                       type="text"
                       className={`pixel-border bg-red-700/80 text-red-300 font-semibold px-3 py-2 focus:outline-none focus:bg-red-700 transition-all duration-300 ${isMobileHorizontal ? 'min-w-[120px] text-sm' : 'min-w-[180px] text-base'}`}
                       style={{ 
