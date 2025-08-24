@@ -45,31 +45,34 @@ export async function saveLevel2TimerState(user_id: string, timer: number, curre
   try {
     // Get existing progress first
     const existingProgress = await getLevel2Progress(user_id);
+    console.log('[Timer Save] Existing progress:', existingProgress);
     
-    const updateData: Partial<Level2Progress> = {
-      timer,
-      updated_at: new Date().toISOString()
-    };
+    let dataToSave;
     
-    // Update current_screen if provided
-    if (current_screen !== undefined) {
-      updateData.current_screen = current_screen;
+    if (existingProgress) {
+      // Update existing record
+      dataToSave = {
+        ...existingProgress,
+        timer,
+        current_screen: current_screen !== undefined ? current_screen : existingProgress.current_screen,
+        updated_at: new Date().toISOString()
+      };
+    } else {
+      // Create new record
+      dataToSave = {
+        user_id,
+        current_screen: current_screen || 1,
+        completed_screens: [],
+        timer,
+        updated_at: new Date().toISOString()
+      };
     }
+    
+    console.log('[Timer Save] Data to save:', dataToSave);
     
     const { data, error } = await supabase
       .from('hl2_progress')
-      .upsert(
-        existingProgress 
-          ? { ...existingProgress, ...updateData }
-          : {
-              user_id,
-              current_screen: current_screen || 1,
-              completed_screens: [],
-              timer,
-              updated_at: new Date().toISOString()
-            },
-        { onConflict: 'user_id' }
-      )
+      .upsert(dataToSave, { onConflict: 'user_id' })
       .select()
       .single();
 

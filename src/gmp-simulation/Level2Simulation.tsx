@@ -199,15 +199,16 @@ const Level2Simulation: React.FC = () => {
   // Timer auto-save handler
   const handleTimerSave = useCallback(async (time: number) => {
     try {
+      console.log('[Level2Simulation] handleTimerSave called with time:', time);
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user || !user.id) {
         console.error('[Level2Simulation] Auth error during timer save:', authError);
         return;
       }
       
-      console.log('[Level2Simulation] Auto-saving timer:', time);
-      await saveLevel2TimerState(user.id, time, level2Screen);
-      console.log('[Level2Simulation] Timer auto-save successful');
+      console.log('[Level2Simulation] Auto-saving timer for user:', user.id, 'time:', time, 'screen:', level2Screen);
+      const result = await saveLevel2TimerState(user.id, time, level2Screen);
+      console.log('[Level2Simulation] Timer auto-save successful, result:', result);
     } catch (err) {
       console.error('[Level2Simulation] Timer auto-save failed:', err);
     }
