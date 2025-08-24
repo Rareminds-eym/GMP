@@ -5,7 +5,7 @@ import LoadingScreen from "./components/LoadingScreen";
 import { supabase } from "../../lib/supabase";
 import { hackathonData } from "../HackathonData";
 import Level2SolutionCard from "./Level2SolutionCard";
-import { restoreHL2Progress, saveHL2Progress } from "./level2Services";
+import { restoreHL2Progress, saveHL2Progress, markScreenCompleteWithTimer } from "./level2Services";
 
 
 interface Level2Screen2Props {
@@ -59,6 +59,7 @@ const Level2Screen2: React.FC<Level2Screen2Props> = ({ onProceedConfirmed, timer
     return () => { if (timeoutId) clearTimeout(timeoutId); };
   }, []);
 
+
   // Show brief automatically in mobile horizontal mode
   useEffect(() => {
     if (isMobileHorizontal && !showBrief && selectedCaseId != null) {
@@ -71,7 +72,7 @@ const Level2Screen2: React.FC<Level2Screen2Props> = ({ onProceedConfirmed, timer
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMobileHorizontal, selectedCaseId]);
 
-  // Example: Save progress when proceeding (call this in your navigation logic)
+// Example: Save progress when proceeding (call this in your navigation logic)
   const handleProceed = async () => {
     setLoading(true);
     try {
@@ -92,6 +93,7 @@ const Level2Screen2: React.FC<Level2Screen2Props> = ({ onProceedConfirmed, timer
       setLoading(false);
     }
   };
+
 
   if (loading) return (
     <LoadingScreen

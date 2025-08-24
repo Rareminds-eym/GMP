@@ -1,7 +1,7 @@
 // All Level 2 (solution round) API and helper functions should go here.
 // Example: saveLevel2Attempt, fetchLevel2Cases, etc.
 
-import { saveLevel2Progress, getLevel2Progress, Level2Progress } from './level2ProgressHelpers';
+import { saveLevel2Progress, getLevel2Progress, Level2Progress, saveLevel2TimerState, getLevel2TimerState, markScreenCompleteWithTimer } from './level2ProgressHelpers';
 
 /**
  * Save Level 2 progress for the user.
@@ -39,3 +39,6 @@ export function getNextHL2Screen(progress: Level2Progress, totalScreens = 4): { 
 	// All screens completed
 	return { nextScreen: totalScreens, completed };
 }
+
+// Export the new enhanced timer utilities
+export { saveLevel2TimerState, getLevel2TimerState, markScreenCompleteWithTimer };

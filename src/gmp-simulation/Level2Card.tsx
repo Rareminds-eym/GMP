@@ -43,7 +43,7 @@ const Level2Card: React.FC<Level2CardProps & Level2CardExtraProps> = ({ teamName
     );
   }
   if (screen === 2) return <Level2Screen2 onProceedConfirmed={onAdvanceScreen} timer={timer} />;
-  if (screen === 3) return <Level2Screen3 />;
+  if (screen === 3) return <Level2Screen3 timer={timer} />;
   if (screen === 4) return <Level2Screen4 />;
   return null;
 };

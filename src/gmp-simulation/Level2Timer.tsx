@@ -5,16 +5,71 @@ interface Level2TimerProps {
   isActive: boolean;
   onTimeUp: () => void;
   onTick?: (time: number) => void;
+  savedTime?: number; // Allow resuming from a saved time
+  autoSave?: boolean; // Whether to periodically save timer state
+  onSaveTimer?: (time: number) => void; // Callback to save timer state
+  isMobileHorizontal?: boolean; // For mobile responsive styling
 }
 
-const Level2Timer: React.FC<Level2TimerProps> = ({ initialTime, isActive, onTimeUp, onTick }) => {
-  const [timeRemaining, setTimeRemaining] = useState(initialTime);
+const Level2Timer: React.FC<Level2TimerProps> = ({ 
+  initialTime, 
+  isActive, 
+  onTimeUp, 
+  onTick, 
+  savedTime, 
+  autoSave = false, 
+  onSaveTimer,
+  isMobileHorizontal = false
+}) => {
+  // Initialize with savedTime if available, otherwise use initialTime
+  const getInitialTime = () => {
+    if (typeof savedTime === 'number' && savedTime > 0) {
+      console.log('[Level2Timer] Initializing with savedTime:', savedTime);
+      return savedTime;
+    }
+    console.log('[Level2Timer] Initializing with initialTime:', initialTime);
+    return initialTime;
+  };
+  
+  const [timeRemaining, setTimeRemaining] = useState(getInitialTime());
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const saveIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedTimeRef = useRef<number>(getInitialTime());
 
-  // Reset timer if initialTime changes (e.g., on restart)
+  // Initialize timer with saved time if available
   useEffect(() => {
-    setTimeRemaining(initialTime);
-  }, [initialTime]);
+    if (savedTime !== undefined) {
+      console.log('[Level2Timer] Resuming from saved time:', savedTime);
+      setTimeRemaining(savedTime);
+      lastSavedTimeRef.current = savedTime;
+    } else {
+      console.log('[Level2Timer] Starting with initial time:', initialTime);
+      setTimeRemaining(initialTime);
+      lastSavedTimeRef.current = initialTime;
+    }
+  }, [savedTime, initialTime]);
+
+  // Auto-save timer state periodically if enabled
+  useEffect(() => {
+    if (autoSave && onSaveTimer && isActive) {
+      // Save every 30 seconds if time has changed by at least 30 seconds
+      saveIntervalRef.current = setInterval(() => {
+        const timeDifference = Math.abs(timeRemaining - lastSavedTimeRef.current);
+        if (timeDifference >= 30) {
+          console.log('[Level2Timer] Auto-saving timer state:', timeRemaining, `(${timeDifference}s elapsed)`);
+          onSaveTimer(timeRemaining);
+          lastSavedTimeRef.current = timeRemaining;
+        }
+      }, 30000); // Check every 30 seconds
+      
+      return () => {
+        if (saveIntervalRef.current) {
+          clearInterval(saveIntervalRef.current);
+          saveIntervalRef.current = null;
+        }
+      };
+    }
+  }, [autoSave, onSaveTimer, isActive, timeRemaining]);
 
   useEffect(() => {
     if (typeof onTick === 'function') {
@@ -54,6 +109,16 @@ const Level2Timer: React.FC<Level2TimerProps> = ({ initialTime, isActive, onTime
       }
     };
   }, [isActive, onTimeUp]);
+
+  // Save timer state when component unmounts to prevent data loss
+  useEffect(() => {
+    return () => {
+      if (autoSave && onSaveTimer && timeRemaining !== lastSavedTimeRef.current) {
+        console.log('[Level2Timer] Final save on unmount:', timeRemaining);
+        onSaveTimer(timeRemaining);
+      }
+    };
+  }, [autoSave, onSaveTimer, timeRemaining]);
 
   const minutes = Math.floor(timeRemaining / 60);
   const seconds = timeRemaining % 60;

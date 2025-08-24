@@ -1,11 +1,10 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
-import { useGameSession } from "./useGameSession";
-import Level2Card from "./Level2Card";
-import { Timer } from "./Timer";
-import { Play, Clock, AlertTriangle } from "lucide-react";
+import { AlertTriangle, Clock, Play } from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Level2Card from "./Level2Card";
 import Level2Timer from "./Level2Timer";
-import { getLevel2Progress } from "./level2/level2ProgressHelpers";
+import { getLevel2Progress, saveLevel2TimerState } from "./level2/level2ProgressHelpers";
+import { useGameSession } from "./useGameSession";
 
 // Real eligibility check: only allow if user is in winners_list_level1
 import { supabase } from "../lib/supabase";
@@ -71,18 +70,30 @@ const Level2Simulation: React.FC = () => {
             nextScreen = progress.current_screen;
           }
           setLevel2Screen(nextScreen);
-          if (typeof progress.timer === 'number') setTimerValue(progress.timer);
+          
+          // Restore timer - ensure it's a valid number
+          if (typeof progress.timer === 'number' && progress.timer > 0) {
+            console.log('[Level2Simulation] Restoring timer from database:', progress.timer);
+            setTimerValue(progress.timer);
+          } else {
+            console.log('[Level2Simulation] No valid timer found, using initial time:', INITIAL_TIME);
+            setTimerValue(INITIAL_TIME);
+          }
+          
           // Update isFirstTime based on progress
           setIsFirstTime(nextScreen === 1 && !progress.completed_screens?.length);
         } else {
-          setIsFirstTime(true); // No progress found, assume first time
+          console.log('[Level2Simulation] No progress found, initializing with default timer');
+          setTimerValue(INITIAL_TIME);
+          setIsFirstTime(true);
         }
       } catch (err) {
-        console.warn('[Level2Simulation] No progress found or error restoring:', err);
-        setIsFirstTime(true); // Default to first time on error
+        console.warn('[Level2Simulation] Error restoring progress:', err);
+        setTimerValue(INITIAL_TIME);
+        setIsFirstTime(true);
       }
     })();
-  }, []);
+  }, [INITIAL_TIME]);
   useEffect(() => {
     console.log('[Level2Simulation][DEBUG] hideProgress state changed:', hideProgress);
   }, [hideProgress]);
@@ -185,6 +196,23 @@ const Level2Simulation: React.FC = () => {
     setShowLevelModal(true);
   }, []);
 
+  // Timer auto-save handler
+  const handleTimerSave = useCallback(async (time: number) => {
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user || !user.id) {
+        console.error('[Level2Simulation] Auth error during timer save:', authError);
+        return;
+      }
+      
+      console.log('[Level2Simulation] Auto-saving timer:', time);
+      await saveLevel2TimerState(user.id, time, level2Screen);
+      console.log('[Level2Simulation] Timer auto-save successful');
+    } catch (err) {
+      console.error('[Level2Simulation] Timer auto-save failed:', err);
+    }
+  }, [level2Screen]);
+
   // UI rendering
   console.log('[Level2Simulation][DEBUG] Render: canAccessLevel2 =', canAccessLevel2);
   if (canAccessLevel2 === null) {
@@ -284,8 +312,8 @@ const Level2Simulation: React.FC = () => {
     }, 1200);
   };
   return (
-    <div className="min-h-screen bg-gray-800 flex flex-col items-center justify-center p-2 relative">
-      <div className="container mx-auto px-3 py-2">
+    <div className="min-h-screen bg-gray-800 flex flex-col items-center justify-center relative">
+      <div className="container mx-auto px-3">
         {level2Screen !== 3 && (
           <div className="flex items-center justify-between pixel-border bg-gradient-to-r from-gray-700 to-gray-600 px-2 py-1 mb-4">
             {/* Left - Level and Case */}
@@ -324,16 +352,14 @@ const Level2Simulation: React.FC = () => {
                 </div>
                 <Level2Timer
                   initialTime={INITIAL_TIME}
+                  savedTime={timerValue}
                   isActive={timerActive}
                   onTimeUp={() => setTimerActive(false)}
+                  onTick={setTimerValue}
+                  autoSave={true}
+                  onSaveTimer={handleTimerSave}
                 />
               </div>
-              <Level2Timer
-                initialTime={INITIAL_TIME}
-                isActive={timerActive}
-                onTimeUp={() => setTimerActive(false)}
-                onTick={setTimerValue}
-              />
             </div>
           </div>
         )}

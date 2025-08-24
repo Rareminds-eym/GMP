@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
-import { ConfirmationModalProps } from '../types';
+import React, { useEffect } from 'react';
 import { useDeviceLayout } from '../../../hooks/useOrientation';
+import { ConfirmationModalProps } from '../types';
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ show, onClose, onConfirm, isLoading = false }) => {
   const { isMobile, isHorizontal } = useDeviceLayout();
@@ -11,7 +11,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ show, onClose, on
   useEffect(() => {
     if (show) {
       document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
+      document.body.style.position = 'sticky';
       document.body.style.width = '100%';
     } else {
       document.body.style.overflow = '';
@@ -30,7 +30,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ show, onClose, on
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-2 sm:p-4" 
+      className="sticky top-0 inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-2 sm:p-4" 
       style={{ 
         fontFamily: 'Verdana, Geneva, Tahoma, sans-serif',
         position: 'fixed',
