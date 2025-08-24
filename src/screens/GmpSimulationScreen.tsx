@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 import Level2Simulation from "../gmp-simulation/Level2Simulation";
+import GmpSimulation from "../gmp-simulation/GmpSimulation";
 
 export default function GmpSimulationScreen({ mode: routeMode }) {
   const { moduleId } = useParams();
@@ -38,7 +39,7 @@ export default function GmpSimulationScreen({ mode: routeMode }) {
     return null;
   }
 
-  // Only render Level2Simulation for round 2 (moduleId '6' or 'HL2')
+  // Render Level 2 (HL2) when appropriate
   if (moduleId === "6" || moduleId === "HL2" || mode === "solution") {
     return (
       <div style={{ fontFamily: 'Verdana, Geneva, Tahoma, sans-serif' }}>
@@ -46,6 +47,11 @@ export default function GmpSimulationScreen({ mode: routeMode }) {
       </div>
     );
   }
-  // Optionally, render nothing or a message for other modules
-  return null;
+
+  // Default: render Level 1 (HL1) simulation
+  return (
+    <div style={{ fontFamily: 'Verdana, Geneva, Tahoma, sans-serif' }}>
+      <GmpSimulation mode={mode} onProceedToLevel2={handleProceedToLevel2} />
+    </div>
+  );
 }
