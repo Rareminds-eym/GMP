@@ -77,30 +77,30 @@ const FillInBlanksStage: React.FC<FillInBlanksStageProps> = ({
 
   return (
     <div className={`${isMobileHorizontal ? 'space-y-0.5' : 'space-y-2'} animate-fadeIn`}>
-      <div className={`text-center ${isMobileHorizontal ? 'mb-0.5' : 'mb-2'}`}>
-        <div className={`pixel-border-thick bg-gradient-to-br from-amber-900/30 to-yellow-900/30 ${isMobileHorizontal ? 'p-1' : 'p-2'} relative overflow-hidden`}>
-          <div className="absolute inset-0 bg-pixel-pattern opacity-5"></div>
-          <div className="relative z-10">
-            <div className={`flex items-center justify-center ${isMobileHorizontal ? 'space-x-0.5' : 'space-x-1'} ${isMobileHorizontal ? 'mb-1' : 'mb-2'}`}>
-              <div className={`pixel-border bg-gradient-to-br from-amber-500 to-yellow-500 ${isMobileHorizontal ? 'p-0.5' : 'p-1.5'} relative overflow-hidden`}>
-                <Lightbulb className={isMobileHorizontal ? 'w-4 h-4 text-white' : 'w-5 h-5 text-white'} />
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-yellow-500 blur-sm opacity-50 -z-10"></div>
-              </div>
-              <div>
-                <h2 className={`pixel-text ${isMobileHorizontal ? 'text-xs' : 'text-xl'} font-black text-white ${isMobileHorizontal ? 'mb-0' : 'mb-0.5'}`} style={{ textShadow: '1.5px 1.5px 0px rgba(0,0,0,0.7), 0 0 6px rgba(245, 158, 11, 0.2)' }}>
-                  YOUR INNOVATION IDEA
-                </h2>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
       <div className="space-y-6">
         <div className="group">
           <div className="pixel-border-thick bg-gray-900/50 p-4 relative overflow-hidden group-hover:bg-gray-900/70 transition-all duration-300">
             <div className="absolute inset-0 bg-pixel-pattern opacity-5"></div>
             <div className="relative z-10">
+              {/* Stage Header moved inside */}
+              <div className={`text-center ${isMobileHorizontal ? 'mb-2' : 'mb-4'}`}>
+                <div className={`pixel-border-thick bg-gradient-to-br from-amber-900/30 to-yellow-900/30 ${isMobileHorizontal ? 'p-1' : 'p-2'} relative overflow-hidden`}>
+                  <div className="absolute inset-0 bg-pixel-pattern opacity-5"></div>
+                  <div className="relative z-10">
+                    <div className={`flex items-center justify-center ${isMobileHorizontal ? 'space-x-0.5' : 'space-x-1'} ${isMobileHorizontal ? 'mb-1' : 'mb-2'}`}>
+                      <div className={`pixel-border bg-gradient-to-br from-amber-500 to-yellow-500 ${isMobileHorizontal ? 'p-0.5' : 'p-1.5'} relative overflow-hidden`}>
+                        <Lightbulb className={isMobileHorizontal ? 'w-4 h-4 text-white' : 'w-5 h-5 text-white'} />
+                        <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-yellow-500 blur-sm opacity-50 -z-10"></div>
+                      </div>
+                      <div>
+                        <h2 className={`pixel-text ${isMobileHorizontal ? 'text-xs' : 'text-xl'} font-black text-white ${isMobileHorizontal ? 'mb-0' : 'mb-0.5'}`} style={{ textShadow: '1.5px 1.5px 0px rgba(0,0,0,0.7), 0 0 6px rgba(245, 158, 11, 0.2)' }}>
+                          YOUR INNOVATION IDEA
+                        </h2>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <p className={`pixel-text text-gray-300 font-bold ${isMobileHorizontal ? 'text-sm' : 'text-base'} mb-4 leading-relaxed`}>
                 Complete this sentence to define your innovation idea:
               </p>
@@ -113,7 +113,7 @@ const FillInBlanksStage: React.FC<FillInBlanksStageProps> = ({
                     <input
                       ref={firstInputRef}
                       type="text"
-                      className={`pixel-border bg-gray-700/80 text-amber-300 font-semibold px-3 py-2 focus:outline-none focus:bg-gray-700 transition-all duration-300 ${isMobileHorizontal ? 'min-w-[100px] text-sm' : 'min-w-[150px] text-base'}`}
+                      className={`pixel-border bg-gray-700/80 text-amber-300 font-semibold px-3 py-2 focus:outline-none focus:bg-gray-700 transition-all duration-300 ${isMobileHorizontal ? 'min-w-[150px] text-sm' : 'min-w-[250px] text-base'}`}
                       style={{ 
                         borderColor: parts.what.length > 0 ? '#f59e0b' : '#6b7280',
                         boxShadow: parts.what.length > 0 ? '0 0 10px rgba(245, 158, 11, 0.3)' : 'none'
@@ -125,7 +125,7 @@ const FillInBlanksStage: React.FC<FillInBlanksStageProps> = ({
                     <span>for</span>
                     <input
                       type="text"
-                      className={`pixel-border bg-gray-700/80 text-amber-300 font-semibold px-3 py-2 focus:outline-none focus:bg-gray-700 transition-all duration-300 ${isMobileHorizontal ? 'min-w-[100px] text-sm' : 'min-w-[150px] text-base'}`}
+                      className={`pixel-border bg-gray-700/80 text-amber-300 font-semibold px-3 py-2 focus:outline-none focus:bg-gray-700 transition-all duration-300 ${isMobileHorizontal ? 'min-w-[150px] text-sm' : 'min-w-[220px] text-base'}`}
                       style={{ 
                         borderColor: parts.who.length > 0 ? '#f59e0b' : '#6b7280',
                         boxShadow: parts.who.length > 0 ? '0 0 10px rgba(245, 158, 11, 0.3)' : 'none'
@@ -137,7 +137,7 @@ const FillInBlanksStage: React.FC<FillInBlanksStageProps> = ({
                     <span>by</span>
                     <input
                       type="text"
-                      className={`pixel-border bg-gray-700/80 text-amber-300 font-semibold px-3 py-2 focus:outline-none focus:bg-gray-700 transition-all duration-300 ${isMobileHorizontal ? 'min-w-[100px] text-sm' : 'min-w-[150px] text-base'}`}
+                      className={`pixel-border bg-gray-700/80 text-amber-300 font-semibold px-3 py-2 focus:outline-none focus:bg-gray-700 transition-all duration-300 ${isMobileHorizontal ? 'min-w-[150px] text-sm' : 'min-w-[280px] text-base'}`}
                       style={{ 
                         borderColor: parts.how.length > 0 ? '#f59e0b' : '#6b7280',
                         boxShadow: parts.how.length > 0 ? '0 0 10px rgba(245, 158, 11, 0.3)' : 'none'
