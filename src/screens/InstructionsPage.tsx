@@ -311,7 +311,11 @@ const InstructionsPage: React.FC = () => {
   // Detect mobile (simple check, can be improved)
   // Determine which levels to show - now we only have 2 levels (HL-1 and HL-2)
   const visibleLevels = levels; // Show all available levels (now only 2)
-  const visibleLevelImages = levelImages.slice(4, 6); // Use Level5.png and Level6.png for HL-1 and HL-2
+  // Use Level5.png for HL-1 and HL6.png for HL-2 (custom HL2 image)
+  const visibleLevelImages = [
+    "/backgrounds/HL5.png", // HL-1
+    "/backgrounds/HL6.png",   // HL-2 (custom image)
+  ];
   // Map selected index to correct level in visibleLevels
   const selectedIdx = selected;
   // Only allow selection of visible levels
@@ -489,17 +493,8 @@ const InstructionsPage: React.FC = () => {
                       <img
                         src={visibleLevelImages[i]}
                         alt={level.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain bg-black"
                       />
-                      {/* Locked overlay for HL-2 only (HL-1 is now unlocked) */}
-                      {(i === 1) && (
-                        <div className="absolute inset-0 bg-gradient-to-r from-green-400 via-cyan-600 to-emerald-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center backdrop-blur-sm opacity-90">
-                          <div className="text-center flex flex-col items-center justify-center">
-                            <Lock size={selectedIdx === i ? 20 : 16} className="text-white mb-1 drop-shadow-lg" />
-                            <span className={`text-white font-bold drop-shadow-lg ${selectedIdx === i ? 'text-xs' : 'text-[10px]'}`}>LOCKED</span>
-                          </div>
-                        </div>
-                      )}
                     </motion.div>
                   ))}
                 </motion.div>
@@ -823,17 +818,8 @@ const InstructionsPage: React.FC = () => {
                     <img
                       src={visibleLevelImages[i]}
                       alt={level.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain bg-black"
                     />
-                    {/* Locked overlay for HL-2 only (HL-1 is now unlocked) */}
-                    {(i === 1) && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-green-400 via-cyan-600 to-emerald-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center backdrop-blur-sm opacity-90">
-                        <div className="text-center flex flex-col items-center justify-center">
-                          <Lock size={48} className="text-white mb-2 drop-shadow-lg" />
-                          <span className="text-white text-sm font-bold drop-shadow-lg">LOCKED</span>
-                        </div>
-                      </div>
-                    )}
                   </motion.div>
                 ))}
               </motion.div>
