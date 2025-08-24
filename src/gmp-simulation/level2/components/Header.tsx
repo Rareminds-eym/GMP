@@ -1,53 +1,63 @@
 import { FileText } from 'lucide-react';
 import React from 'react';
 import { HeaderProps } from '../types';
-import Timer from './Timer';
+import Level2Timer from '../../Level2Timer';
 
 
-const Header: React.FC<HeaderProps> = ({ currentStageData, isMobileHorizontal, selectedCase, onShowBrief, progress, timerStopped = false }) => {
+const Header: React.FC<HeaderProps> = ({ 
+  currentStageData, 
+  isMobileHorizontal, 
+  selectedCase, 
+  onShowBrief, 
+  progress, 
+  timerStopped = false, 
+  savedTimer = null,
+  onTimerTick,
+  onTimerTimeUp
+}) => {
   return (
     <div className={isMobileHorizontal ? 'mb-3' : 'mb-6'}>
-      {/* <div 
-        className={`pixel-border-thick bg-gradient-to-br ${currentStageData.bgColor} relative overflow-hidden ${isMobileHorizontal ? 'p-1.5' : 'p-6'}`}
-        style={{
-          background: `linear-gradient(135deg, rgba(6,182,212,0.15) 0%, rgba(37,99,235,0.15) 100%), linear-gradient(135deg, #0f172a 0%, #1e293b 100%)`
-        }}
-      > */}
-        {/* <div className="absolute inset-0 bg-pixel-pattern opacity-5"></div> */}
-        {/* <div className="absolute inset-0 bg-scan-lines opacity-10"></div> */}
-        
-        {/* Animated Background Effects */}
-        {/* <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent animate-pulse opacity-50"></div>
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent animate-pulse opacity-30" style={{ animationDelay: '0.5s' }}></div> */}
+        {/* <div 
+          className={`pixel-border-thick bg-gradient-to-br ${currentStageData.bgColor} relative overflow-hidden ${isMobileHorizontal ? 'p-1.5' : 'p-6'}`}
+          style={{
+            background: `linear-gradient(135deg, rgba(6,182,212,0.15) 0%, rgba(37,99,235,0.15) 100%), linear-gradient(135deg, #0f172a 0%, #1e293b 100%)`
+          }}
+        > */}
+          {/* <div className="absolute inset-0 bg-pixel-pattern opacity-5"></div> */}
+          {/* <div className="absolute inset-0 bg-scan-lines opacity-10"></div> */}
+          
+          {/* Animated Background Effects */}
+          {/* <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent animate-pulse opacity-50"></div>
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent animate-pulse opacity-30" style={{ animationDelay: '0.5s' }}></div> */}
 
-        <div className={
-          `flex items-center justify-between pixel-border bg-gradient-to-r from-gray-700 to-gray-600 px-2 py-1 mb-4`
-        }>
-          {/* Left: Icon and Title */}
-          <div className={`flex items-center ${isMobileHorizontal ? 'space-x-0.5' : 'space-x-4'}`}>
-            <div 
-              className={`pixel-border-thick bg-gradient-to-br ${currentStageData.color} flex items-center justify-center ${isMobileHorizontal ? 'p-0.5' : 'p-4'} relative overflow-hidden group`}
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <currentStageData.icon className={`${isMobileHorizontal ? 'w-4 h-4' : 'w-10 h-10'} text-white relative z-10 drop-shadow-lg`} />
-              {/* Glow effect */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${currentStageData.color} blur-sm opacity-50 -z-10`}></div>
-            </div>
-            <div className="flex flex-col items-start">
-              <div className="flex items-center space-x-1 mb-0.5">
-                <h1 className={`pixel-text ${isMobileHorizontal ? 'text-xs' : 'text-2xl'} font-black text-white`} 
-                    style={{ textShadow: isMobileHorizontal ? '1.5px 1.5px 0px rgba(0,0,0,0.7), 0 0 6px rgba(6,182,212,0.3)' : '3px 3px 0px rgba(0,0,0,0.7), 0 0 20px rgba(6,182,212,0.3)' }}>
-                  INNOVATION QUEST
-                </h1>
+          <div className={
+            `flex items-center justify-between pixel-border bg-gradient-to-r from-gray-700 to-gray-600 px-2 py-1 mb-4`
+          }>
+            {/* Left: Icon and Title */}
+            <div className={`flex items-center ${isMobileHorizontal ? 'space-x-0.5' : 'space-x-4'}`}>
+              <div 
+                className={`pixel-border-thick bg-gradient-to-br ${currentStageData.color} flex items-center justify-center ${isMobileHorizontal ? 'p-0.5' : 'p-4'} relative overflow-hidden group`}
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <currentStageData.icon className={`${isMobileHorizontal ? 'w-4 h-4' : 'w-10 h-10'} text-white relative z-10 drop-shadow-lg`} />
+                {/* Glow effect */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${currentStageData.color} blur-sm opacity-50 -z-10`}></div>
               </div>
-              {/* Case number below heading */}
-              <span className={"text-white text-xs font-bold bg-violet-600 px-3 py-1 rounded-lg"}>
-                {currentStageData && currentStageData.caseNumber ? `Stage : ${currentStageData.caseNumber}/10` : ''}
-              </span>
+              <div className="flex flex-col items-start">
+                <div className="flex items-center space-x-1 mb-0.5">
+                  <h1 className={`pixel-text ${isMobileHorizontal ? 'text-xs' : 'text-2xl'} font-black text-white`} 
+                      style={{ textShadow: isMobileHorizontal ? '1.5px 1.5px 0px rgba(0,0,0,0.7), 0 0 6px rgba(6,182,212,0.3)' : '3px 3px 0px rgba(0,0,0,0.7), 0 0 20px rgba(6,182,212,0.3)' }}>
+                    INNOVATION QUEST
+                  </h1>
+                </div>
+                {/* Case number below heading */}
+                <span className={"text-white text-xs font-bold bg-violet-600 px-3 py-1 rounded-lg"}>
+                  {currentStageData && currentStageData.caseNumber ? `Stage : ${currentStageData.caseNumber}/10` : ''}
+                </span>
+              </div>
             </div>
-          </div>
-          {/* Right: Progress, Timer (red pill), and Brief */}
-          <div className="flex items-center space-x-2">
+            {/* Right: Progress, Timer (red pill), and Brief */}
+            <div className="flex items-center space-x-2">
             {/* Progress Bar + percent */}
             {/* <div className="hidden sm:flex items-center gap-1 mr-1">
               <div className="w-16 h-2 bg-gray-800 pixel-border overflow-hidden">
@@ -68,9 +78,14 @@ const Header: React.FC<HeaderProps> = ({ currentStageData, isMobileHorizontal, s
               <div className="w-3 h-3 bg-gray-800 pixel-border flex items-center justify-center">
                 <svg className="w-2 h-2 text-gray-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l3 2" /></svg>
               </div>
-              <Timer isMobileHorizontal={isMobileHorizontal} />
-            <div className={isMobileHorizontal ? 'mr-1' : 'mr-4'}>
-              <Timer isMobileHorizontal={isMobileHorizontal} stopped={timerStopped} />
+              <Level2Timer 
+                initialTime={10800} // 3 hours initial time
+                savedTime={savedTimer || undefined} // Use saved timer value
+                isActive={!timerStopped}
+                isMobileHorizontal={isMobileHorizontal}
+                onTick={onTimerTick || (() => {})}
+                onTimeUp={onTimerTimeUp || (() => {})}
+              />
             </div>
             {selectedCase && onShowBrief && (
               <button
@@ -93,7 +108,6 @@ const Header: React.FC<HeaderProps> = ({ currentStageData, isMobileHorizontal, s
             )}
           </div>
         </div>
-      </div>
     </div>
   );
 };

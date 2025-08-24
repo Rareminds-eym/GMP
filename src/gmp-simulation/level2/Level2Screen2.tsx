@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { hackathonData } from "../HackathonData";
 import Level2SolutionCard from "./Level2SolutionCard";
-import { restoreHL2Progress, saveHL2Progress } from "./level2Services";
+import { restoreHL2Progress, saveHL2Progress, markScreenCompleteWithTimer } from "./level2Services";
 
 
 interface Level2Screen2Props {
@@ -53,23 +53,21 @@ const Level2Screen2: React.FC<Level2Screen2Props> = ({ onProceedConfirmed, timer
     return () => { if (timeoutId) clearTimeout(timeoutId); };
   }, []);
 
-  // Example: Save progress when proceeding (call this in your navigation logic)
+  // Save progress and timer when proceeding to next screen
   const handleProceed = async () => {
     setLoading(true);
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user || !user.id) throw new Error("User not authenticated");
-      const progressToSave = {
-        user_id: user.id,
-        current_screen: 2,
-        completed_screens: [2], // Add logic to merge with previous completed screens
-        timer: restoredTimer,
-      };
-      console.log('[Level2Screen2] Saving progress:', progressToSave);
-      await saveHL2Progress(progressToSave);
+      
+      console.log('[Level2Screen2] Marking screen 2 complete with timer:', restoredTimer);
+      // Use the enhanced utility to mark screen complete with timer
+      await markScreenCompleteWithTimer(user.id, 2, restoredTimer);
+      
       if (onProceedConfirmed) onProceedConfirmed();
-    } catch (err) {
-      setError("Failed to save progress");
+    } catch (err: any) {
+      console.error('[Level2Screen2] Error saving progress:', err);
+      setError(err.message || "Failed to save progress");
     } finally {
       setLoading(false);
     }

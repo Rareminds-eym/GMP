@@ -19,7 +19,11 @@ import ResetProgressModal from './components/ResetProgressModal';
 import Toast from './components/Toast';
 import { convertProgressToFormData, useLevel2Screen3Progress } from './hooks/useLevel2Screen3Progress';
 
-const Level2Screen3: React.FC = () => {
+interface Level2Screen3Props {
+  timer: number;
+}
+
+const Level2Screen3: React.FC<Level2Screen3Props> = ({ timer }) => {
   const [selectedCase, setSelectedCase] = useState<{ email: string; case_id: number; updated_at: string, description?: string } | null>(null);
   const navigate = useNavigate();
   const [showBrief, setShowBrief] = useState(false);
@@ -248,6 +252,7 @@ const Level2Screen3: React.FC = () => {
 
     return () => clearTimeout(timer);
   }, [user, isProgressLoading, loadingCase]);
+
 
   // Load saved progress on component mount (only once)
   useEffect(() => {
@@ -558,6 +563,16 @@ const Level2Screen3: React.FC = () => {
             onShowBrief={() => setShowBrief(true)}
             progress={progress}
             timerStopped={isLevelCompleted}
+            savedTimer={timer}
+            onTimerTick={(updatedTime) => {
+              console.log('[Level2Screen3] Timer tick received:', updatedTime);
+              // Note: We don't update timer here as it's managed by parent Level2Simulation
+              // This callback is mainly for logging/monitoring purposes
+            }}
+            onTimerTimeUp={() => {
+              console.log('⏰ Timer expired in Level2Screen3');
+              // Handle timer expiration (e.g., show modal, save progress, etc.)
+            }}
           />
           
           {/* Loading/Error for Brief Button */}

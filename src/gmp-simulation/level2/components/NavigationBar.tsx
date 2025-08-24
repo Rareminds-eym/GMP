@@ -1,5 +1,5 @@
-import React from "react";
 import { CheckCircle } from "lucide-react";
+import React from "react";
 import { NavigationBarProps } from "../types";
 
 const NavigationBar: React.FC<NavigationBarProps> = ({
@@ -46,14 +46,14 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
                     >
                       {canProceed
                         ? "READY TO PROCEED"
-                        : "COMPLETE CURRENT STEP"}
+                        : "COMPLETE CURRENT STAGE"}
                     </span>
                   </div>
                 </div>
 
                 <div className="hidden sm:flex items-center space-x-2">
                   <span className="pixel-text text-sm font-bold text-cyan-300">
-                    STAGE {stage}/9
+                    STAGE {stage}/10
                   </span>
                   <div className="w-20 h-2 bg-gray-700 pixel-border">
                     <div

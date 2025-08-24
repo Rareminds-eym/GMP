@@ -34,6 +34,9 @@ export interface HeaderProps {
   onShowBrief?: () => void;
   progress?: number;
   timerStopped?: boolean;
+  savedTimer?: number | null;
+  onTimerTick?: (remainingTime: number) => void;
+  onTimerTimeUp?: () => void;
 }
 
 export interface ProgressTrackProps {
