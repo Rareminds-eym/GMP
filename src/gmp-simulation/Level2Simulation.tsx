@@ -314,14 +314,15 @@ const Level2Simulation: React.FC = () => {
       <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
       <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
       <div className="pixel-border-thick bg-gradient-to-r from-blue-600 to-blue-700 p-4 max-w-xl w-full text-center relative z-10">
-        {/* Back Button */}
-        <div className="absolute top-4 left-4">
+        {/* Back Button - styled like Level 1 modal */}
+        <div className="absolute top-3 left-3 z-20">
           <button
             onClick={() => navigate('/modules')}
-            className="pixel-border bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white font-black py-2 px-4 pixel-text transition-all transform hover:scale-105 text-sm flex items-center gap-2"
+            className="pixel-border bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black py-1 px-3 pixel-text transition-all flex items-center gap-2 text-xs shadow-lg"
+            aria-label="Back"
           >
-            <Play className="w-4 h-4" />
-            BACK
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            Back
           </button>
         </div>
         <div className="flex justify-center mb-4">
@@ -332,16 +333,16 @@ const Level2Simulation: React.FC = () => {
         <h1 className="text-xl font-black text-blue-100 mb-3 pixel-text">
           CAPAThon 2.0
         </h1>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
+        <div className="grid grid-cols-3 gap-2 mb-4">
           <div className="pixel-border bg-gradient-to-r from-blue-700 to-blue-600 p-2">
             <div className="w-6 h-6 bg-blue-800 pixel-border mx-auto mb-1 flex items-center justify-center">
               <Clock className="w-3 h-3 text-blue-300" />
             </div>
             <h3 className="font-black text-white text-xs pixel-text">
-              3 Hours
+              3 HOURS
             </h3>
             <p className="text-blue-100 text-xs font-bold">
-              Select 1 case , find Solution and Innovate.
+              Select 1 case, find Solution and Innovate.
             </p>
           </div>
           <div className="pixel-border bg-gradient-to-r from-orange-700 to-orange-600 p-2">
@@ -349,7 +350,7 @@ const Level2Simulation: React.FC = () => {
               <AlertTriangle className="w-3 h-3 text-orange-300" />
             </div>
             <h3 className="font-black text-white text-xs pixel-text">
-              Solution Round
+              SOLUTION ROUND
             </h3>
             <p className="text-orange-100 text-xs font-bold">
               Find Solution for selected case
@@ -360,7 +361,7 @@ const Level2Simulation: React.FC = () => {
               <Play className="w-3 h-3 text-purple-300" />
             </div>
             <h3 className="font-black text-white text-xs pixel-text">
-               INNOVATION ROUND
+              INNOVATION ROUND
             </h3>
             <p className="text-purple-100 text-xs font-bold">
               Answer precisely and add attachment
@@ -370,7 +371,6 @@ const Level2Simulation: React.FC = () => {
         <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
           <button
             onClick={() => {
-              // Set session_id and email in sessionStorage if available
               if (session_id && email) {
                 window.sessionStorage.setItem('session_id', session_id);
                 window.sessionStorage.setItem('email', email);
@@ -388,7 +388,6 @@ const Level2Simulation: React.FC = () => {
                   clearInterval(interval);
                   setShowCountdown(false);
                   setShowLevel2Card(true);
-                  // Set timer start timestamp if not already set
                   if (!window.sessionStorage.getItem('level2_timer_start')) {
                     window.sessionStorage.setItem('level2_timer_start', Date.now().toString());
                     console.log('[TIMER] Set level2_timer_start:', Date.now());
