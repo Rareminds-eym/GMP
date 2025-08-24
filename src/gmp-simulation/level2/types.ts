@@ -7,6 +7,7 @@ export interface StageData {
   accent: string;
   description: string;
   caseNumber: number;
+  isOptional?: boolean;
 }
 
 export interface StageFormData {

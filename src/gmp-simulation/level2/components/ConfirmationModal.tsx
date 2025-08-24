@@ -2,43 +2,20 @@ import { AlertTriangle } from 'lucide-react';
 import React, { useEffect } from 'react';
 import { useDeviceLayout } from '../../../hooks/useOrientation';
 import { ConfirmationModalProps } from '../types';
+import PopupPortal from '../../../components/ui/PopupPortal';
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ show, onClose, onConfirm, isLoading = false }) => {
   const { isMobile, isHorizontal } = useDeviceLayout();
   const isMobileHorizontal = isMobile && isHorizontal;
   
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (show) {
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'sticky';
-      document.body.style.width = '100%';
-    } else {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-    }
-    
-    return () => {
-      document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.width = '';
-    };
-  }, [show]);
-  
   if (!show) return null;
 
   return (
-    <div 
-      className="sticky top-0 inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-2 sm:p-4" 
-      style={{ 
-        fontFamily: 'Verdana, Geneva, Tahoma, sans-serif',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0
-      }}
+    <PopupPortal
+      isOpen={show}
+      onClose={onClose}
+      className="bg-black bg-opacity-60 p-2 sm:p-4"
+      closeOnBackdropClick={!isLoading}
     >
       <div 
         className={`pixel-border-thick bg-yellow-100 w-full text-center relative overflow-hidden animate-slideIn ${
@@ -117,7 +94,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ show, onClose, on
           </div>
         </div>
       </div>
-    </div>
+    </PopupPortal>
   );
 };
 

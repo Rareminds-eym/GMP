@@ -5,6 +5,7 @@ import { StageProps } from '../../types';
 const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMobileHorizontal }) => {
   // Use ref to store the onChange function to avoid infinite loops
   const onChangeRef = useRef(onFormDataChange);
+  const firstInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     onChangeRef.current = onFormDataChange;
   }, [onFormDataChange]);
@@ -45,33 +46,44 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
                     parts.speedScale.length > 0 && parts.impact.length > 0;
   const hasAnyContent = Object.values(parts).some(part => part.length > 0);
   const completedCount = Object.values(parts).filter(part => part.length > 0).length;
+  
+  // Focus the first input when the component mounts (stage changes)
+  useEffect(() => {
+    const focusTimeout = setTimeout(() => {
+      if (firstInputRef.current) {
+        firstInputRef.current.focus();
+      }
+    }, 100); // Small delay to ensure the component is fully rendered
+    
+    return () => clearTimeout(focusTimeout);
+  }, []); // Empty dependency array means this runs once when component mounts
 
   return (
     <div className={`${isMobileHorizontal ? 'space-y-0.5' : 'space-y-2'} animate-fadeIn`}>
-      <div className={`text-center ${isMobileHorizontal ? 'mb-0.5' : 'mb-2'}`}>
-        <div className={`pixel-border-thick bg-gradient-to-br from-indigo-900/30 to-purple-900/30 ${isMobileHorizontal ? 'p-1' : 'p-2'} relative overflow-hidden`}>
-          <div className="absolute inset-0 bg-pixel-pattern opacity-5"></div>
-          <div className="relative z-10">
-            <div className={`flex items-center justify-center ${isMobileHorizontal ? 'space-x-0.5' : 'space-x-1'} ${isMobileHorizontal ? 'mb-1' : 'mb-2'}`}>
-              <div className={`pixel-border bg-gradient-to-br from-indigo-500 to-purple-500 ${isMobileHorizontal ? 'p-0.5' : 'p-1.5'} relative overflow-hidden`}>
-                <FileText className={isMobileHorizontal ? 'w-4 h-4 text-white' : 'w-5 h-5 text-white'} />
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-500 blur-sm opacity-50 -z-10"></div>
-              </div>
-              <div>
-                <h2 className={`pixel-text ${isMobileHorizontal ? 'text-xs' : 'text-xl'} font-black text-white ${isMobileHorizontal ? 'mb-0' : 'mb-0.5'}`} style={{ textShadow: '1.5px 1.5px 0px rgba(0,0,0,0.7), 0 0 6px rgba(99, 102, 241, 0.2)' }}>
-                  FINAL STATEMENT
-                </h2>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
       <div className="space-y-6">
         <div className="group">
           <div className="pixel-border-thick bg-gray-900/50 p-4 relative overflow-hidden group-hover:bg-gray-900/70 transition-all duration-300">
             <div className="absolute inset-0 bg-pixel-pattern opacity-5"></div>
             <div className="relative z-10">
+              {/* Stage Header moved inside */}
+              <div className={`text-center ${isMobileHorizontal ? 'mb-2' : 'mb-4'}`}>
+                <div className={`pixel-border-thick bg-gradient-to-br from-indigo-900/30 to-purple-900/30 ${isMobileHorizontal ? 'p-1' : 'p-2'} relative overflow-hidden`}>
+                  <div className="absolute inset-0 bg-pixel-pattern opacity-5"></div>
+                  <div className="relative z-10">
+                    <div className={`flex items-center justify-center ${isMobileHorizontal ? 'space-x-0.5' : 'space-x-1'} ${isMobileHorizontal ? 'mb-1' : 'mb-2'}`}>
+                      <div className={`pixel-border bg-gradient-to-br from-indigo-500 to-purple-500 ${isMobileHorizontal ? 'p-0.5' : 'p-1.5'} relative overflow-hidden`}>
+                        <FileText className={isMobileHorizontal ? 'w-4 h-4 text-white' : 'w-5 h-5 text-white'} />
+                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-500 blur-sm opacity-50 -z-10"></div>
+                      </div>
+                      <div>
+                        <h2 className={`pixel-text ${isMobileHorizontal ? 'text-xs' : 'text-xl'} font-black text-white ${isMobileHorizontal ? 'mb-0' : 'mb-0.5'}`} style={{ textShadow: '1.5px 1.5px 0px rgba(0,0,0,0.7), 0 0 6px rgba(99, 102, 241, 0.2)' }}>
+                          FINAL STATEMENT
+                        </h2>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <p className={`pixel-text text-gray-300 font-bold ${isMobileHorizontal ? 'text-sm' : 'text-base'} mb-4 leading-relaxed`}>
                 Combine all your ideas into one powerful final statement:
               </p>
@@ -82,8 +94,9 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
                   <div className="flex flex-wrap items-center gap-2 pixel-text font-bold text-white">
                     <span className="text-indigo-300">"Our innovation solves</span>
                     <input
+                      ref={firstInputRef}
                       type="text"
-                      className={`pixel-border bg-red-700/80 text-red-300 font-semibold px-3 py-2 focus:outline-none focus:bg-red-700 transition-all duration-300 ${isMobileHorizontal ? 'min-w-[120px] text-sm' : 'min-w-[180px] text-base'}`}
+                      className={`pixel-border bg-red-700/80 text-red-300 font-semibold px-3 py-2 focus:outline-none focus:bg-red-700 transition-all duration-300 ${isMobileHorizontal ? 'min-w-[180px] text-sm' : 'min-w-[280px] text-base'}`}
                       style={{ 
                         borderColor: parts.problem.length > 0 ? '#ef4444' : '#6b7280',
                         boxShadow: parts.problem.length > 0 ? '0 0 10px rgba(239, 68, 68, 0.3)' : 'none'
@@ -95,7 +108,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
                     <span className="text-indigo-300">by using</span>
                     <input
                       type="text"
-                      className={`pixel-border bg-blue-700/80 text-blue-300 font-semibold px-3 py-2 focus:outline-none focus:bg-blue-700 transition-all duration-300 ${isMobileHorizontal ? 'min-w-[120px] text-sm' : 'min-w-[180px] text-base'}`}
+                      className={`pixel-border bg-blue-700/80 text-blue-300 font-semibold px-3 py-2 focus:outline-none focus:bg-blue-700 transition-all duration-300 ${isMobileHorizontal ? 'min-w-[160px] text-sm' : 'min-w-[240px] text-base'}`}
                       style={{ 
                         borderColor: parts.technology.length > 0 ? '#3b82f6' : '#6b7280',
                         boxShadow: parts.technology.length > 0 ? '0 0 10px rgba(59, 130, 246, 0.3)' : 'none'
@@ -107,7 +120,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
                     <span className="text-indigo-300">, built with</span>
                     <input
                       type="text"
-                      className={`pixel-border bg-green-700/80 text-green-300 font-semibold px-3 py-2 focus:outline-none focus:bg-green-700 transition-all duration-300 ${isMobileHorizontal ? 'min-w-[120px] text-sm' : 'min-w-[180px] text-base'}`}
+                      className={`pixel-border bg-green-700/80 text-green-300 font-semibold px-3 py-2 focus:outline-none focus:bg-green-700 transition-all duration-300 ${isMobileHorizontal ? 'min-w-[160px] text-sm' : 'min-w-[260px] text-base'}`}
                       style={{ 
                         borderColor: parts.collaboration.length > 0 ? '#10b981' : '#6b7280',
                         boxShadow: parts.collaboration.length > 0 ? '0 0 10px rgba(16, 185, 129, 0.3)' : 'none'
@@ -119,7 +132,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
                     <span className="text-indigo-300">, adding</span>
                     <input
                       type="text"
-                      className={`pixel-border bg-purple-700/80 text-purple-300 font-semibold px-3 py-2 focus:outline-none focus:bg-purple-700 transition-all duration-300 ${isMobileHorizontal ? 'min-w-[120px] text-sm' : 'min-w-[180px] text-base'}`}
+                      className={`pixel-border bg-purple-700/80 text-purple-300 font-semibold px-3 py-2 focus:outline-none focus:bg-purple-700 transition-all duration-300 ${isMobileHorizontal ? 'min-w-[160px] text-sm' : 'min-w-[240px] text-base'}`}
                       style={{ 
                         borderColor: parts.creativity.length > 0 ? '#a855f7' : '#6b7280',
                         boxShadow: parts.creativity.length > 0 ? '0 0 10px rgba(168, 85, 247, 0.3)' : 'none'
@@ -131,7 +144,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
                     <span className="text-indigo-300">. It can grow with</span>
                     <input
                       type="text"
-                      className={`pixel-border bg-orange-700/80 text-orange-300 font-semibold px-3 py-2 focus:outline-none focus:bg-orange-700 transition-all duration-300 ${isMobileHorizontal ? 'min-w-[120px] text-sm' : 'min-w-[180px] text-base'}`}
+                      className={`pixel-border bg-orange-700/80 text-orange-300 font-semibold px-3 py-2 focus:outline-none focus:bg-orange-700 transition-all duration-300 ${isMobileHorizontal ? 'min-w-[160px] text-sm' : 'min-w-[250px] text-base'}`}
                       style={{ 
                         borderColor: parts.speedScale.length > 0 ? '#f97316' : '#6b7280',
                         boxShadow: parts.speedScale.length > 0 ? '0 0 10px rgba(249, 115, 22, 0.3)' : 'none'
@@ -143,7 +156,7 @@ const FinalStatementStage: React.FC<StageProps> = ({ formData, onFormDataChange,
                     <span className="text-indigo-300">and will create</span>
                     <input
                       type="text"
-                      className={`pixel-border bg-teal-700/80 text-teal-300 font-semibold px-3 py-2 focus:outline-none focus:bg-teal-700 transition-all duration-300 ${isMobileHorizontal ? 'min-w-[120px] text-sm' : 'min-w-[180px] text-base'}`}
+                      className={`pixel-border bg-teal-700/80 text-teal-300 font-semibold px-3 py-2 focus:outline-none focus:bg-teal-700 transition-all duration-300 ${isMobileHorizontal ? 'min-w-[160px] text-sm' : 'min-w-[260px] text-base'}`}
                       style={{ 
                         borderColor: parts.impact.length > 0 ? '#14b8a6' : '#6b7280',
                         boxShadow: parts.impact.length > 0 ? '0 0 10px rgba(20, 184, 166, 0.3)' : 'none'

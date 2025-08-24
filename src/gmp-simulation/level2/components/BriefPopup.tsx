@@ -1,4 +1,5 @@
 import React from 'react';
+import PopupPortal from '../../../components/ui/PopupPortal';
 
 interface BriefPopupProps {
   show: boolean;
@@ -10,9 +11,11 @@ interface BriefPopupProps {
 const BriefPopup: React.FC<BriefPopupProps> = ({ show, description, isMobileHorizontal, onClose }) => {
   if (!show) return null;
   return (
-    <div
-      className={`fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-2 sm:p-4 font-[Verdana,Arial,sans-serif]`}
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    <PopupPortal
+      isOpen={show}
+      onClose={onClose}
+      className="bg-black bg-opacity-60 p-2 sm:p-4 font-[Verdana,Arial,sans-serif]"
+      closeOnBackdropClick={true}
     >
       <div
         className={
@@ -60,7 +63,7 @@ const BriefPopup: React.FC<BriefPopupProps> = ({ show, description, isMobileHori
           </div>
         </div>
       </div>
-    </div>
+    </PopupPortal>
   );
 };
 

@@ -15,7 +15,7 @@ export async function saveHL2Progress({ user_id, current_screen, completed_scree
  * Restore Level 2 progress for the user.
  * Returns the progress object or null if not found.
  */
-export async function restoreHL2Progress(user_id: number): Promise<Level2Progress | null> {
+export async function restoreHL2Progress(user_id: string): Promise<Level2Progress | null> {
 	const data = await getLevel2Progress(user_id);
 	if (!data) return null;
 	return {

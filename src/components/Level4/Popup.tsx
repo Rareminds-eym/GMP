@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { calculateMaxScore, calculateStars } from "./utils/scoreCalculator";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabase";
+import PopupPortal from "../ui/PopupPortal";
 
 interface HighScoreEntry {
   score: number;
@@ -48,15 +49,14 @@ export const Popup: React.FC<PopupProps> = ({
   };
 
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.25 }}
-        >
+    <PopupPortal
+      isOpen={open}
+      onClose={onClose}
+      className="bg-black/60 backdrop-blur-sm"
+      closeOnBackdropClick={false}
+    >
+      <AnimatePresence>
+        {open && (
           <motion.div
             className={`relative bg-white/20 backdrop-blur-2xl rounded-2xl p-3 shadow-2xl border-4 border-cyan-200/60 w-full flex flex-col ${
               isMobileHorizontal ? "max-w-xs" : "max-w-md"
@@ -174,9 +174,9 @@ export const Popup: React.FC<PopupProps> = ({
               </>
             )}
           </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        )}
+      </AnimatePresence>
+    </PopupPortal>
   );
 };
 
@@ -595,15 +595,14 @@ export const FeedbackPopup: React.FC<FeedbackPopupProps> = ({
   const popupHeight = isMobile ? "auto" : "auto";
   const popupMaxHeight = isMobile ? "80vh" : "90vh";
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.25 }}
-        >
+    <PopupPortal
+      isOpen={open}
+      onClose={onClose}
+      className="bg-black/60 backdrop-blur-sm"
+      closeOnBackdropClick={false}
+    >
+      <AnimatePresence>
+        {open && (
           <motion.div
             className={`relative bg-white/20 backdrop-blur-2xl rounded-2xl p-2 shadow-2xl border-4 border-cyan-200/60 w-full overflow-visible ${
               isMobile ? "max-w-xs p-2" : "max-w-md lg:p-6"
@@ -882,8 +881,8 @@ export const FeedbackPopup: React.FC<FeedbackPopupProps> = ({
               </button>
             </div>
           </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        )}
+      </AnimatePresence>
+    </PopupPortal>
   );
 };

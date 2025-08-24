@@ -1,5 +1,6 @@
 import { CheckCircle, Sparkles } from 'lucide-react';
 import React from 'react';
+import PopupPortal from '../../../components/ui/PopupPortal';
 
 interface LevelCompletionPopupProps {
   show: boolean;
@@ -11,7 +12,12 @@ const LevelCompletionPopup: React.FC<LevelCompletionPopupProps> = ({ show, onCon
   if (!show) return null;
 
   return (
-    <div className="fixed top-0 inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4" style={{ fontFamily: 'Verdana, Geneva, Tahoma, sans-serif' }}>
+    <PopupPortal
+      isOpen={show}
+      onClose={() => {}} // No close action for completion popup
+      className="bg-black bg-opacity-70 p-4"
+      closeOnBackdropClick={false}
+    >
       <div className="pixel-border-thick bg-gradient-to-br from-cyan-900/90 to-blue-900/90 w-full max-w-md text-center relative overflow-hidden animate-slideIn p-8">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
@@ -42,7 +48,7 @@ const LevelCompletionPopup: React.FC<LevelCompletionPopupProps> = ({ show, onCon
           </div>
         </div>
       </div>
-    </div>
+    </PopupPortal>
   );
 };
 
