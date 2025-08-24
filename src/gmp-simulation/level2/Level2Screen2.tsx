@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { useDeviceLayout } from "../../hooks/useOrientation";
+import BriefPopup from "./components/BriefPopup";
+import LoadingScreen from "./components/LoadingScreen";
 import { supabase } from "../../lib/supabase";
 import { hackathonData } from "../HackathonData";
 import Level2SolutionCard from "./Level2SolutionCard";
@@ -16,6 +19,9 @@ const Level2Screen2: React.FC<Level2Screen2Props> = ({ onProceedConfirmed, timer
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [restoredTimer, setRestoredTimer] = useState<number>(timer);
+  const [showBrief, setShowBrief] = useState(false);
+  const { isMobile, isHorizontal } = useDeviceLayout();
+  const isMobileHorizontal = isMobile && isHorizontal;
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
@@ -53,33 +59,48 @@ const Level2Screen2: React.FC<Level2Screen2Props> = ({ onProceedConfirmed, timer
     return () => { if (timeoutId) clearTimeout(timeoutId); };
   }, []);
 
-  // Save progress and timer when proceeding to next screen
+
+  // Show brief automatically in mobile horizontal mode
+  useEffect(() => {
+    if (isMobileHorizontal && !showBrief && selectedCaseId != null) {
+      setShowBrief(true);
+    }
+    // Hide brief if not in mobile horizontal
+    if (!isMobileHorizontal && showBrief) {
+      setShowBrief(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobileHorizontal, selectedCaseId]);
+
+// Example: Save progress when proceeding (call this in your navigation logic)
   const handleProceed = async () => {
     setLoading(true);
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user || !user.id) throw new Error("User not authenticated");
-      
-      console.log('[Level2Screen2] Marking screen 2 complete with timer:', restoredTimer);
-      // Use the enhanced utility to mark screen complete with timer
-      await markScreenCompleteWithTimer(user.id, 2, restoredTimer);
-      
+      const progressToSave = {
+        user_id: user.id,
+        current_screen: 2,
+        completed_screens: [2], // Add logic to merge with previous completed screens
+        timer: restoredTimer,
+      };
+      console.log('[Level2Screen2] Saving progress:', progressToSave);
+      await saveHL2Progress(progressToSave);
       if (onProceedConfirmed) onProceedConfirmed();
-    } catch (err: any) {
-      console.error('[Level2Screen2] Error saving progress:', err);
-      setError(err.message || "Failed to save progress");
+    } catch (err) {
+      setError("Failed to save progress");
     } finally {
       setLoading(false);
     }
   };
 
+
   if (loading) return (
-    <div className="min-h-[300px] flex flex-col items-center justify-center bg-gray-800 rounded-lg p-8 animate-fadeIn">
-      <div className="w-12 h-12 rounded-full bg-yellow-200 flex items-center justify-center mb-4 animate-bounce">
-        <svg className="w-8 h-8 text-yellow-600 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth="4" className="opacity-25" /><path d="M4 12a8 8 0 018-8" strokeWidth="4" className="opacity-75" /></svg>
-      </div>
-      <div className="text-yellow-200 text-lg font-bold pixel-text text-center">Preparing selected case for solution round...</div>
-    </div>
+    <LoadingScreen
+      title="SOLUTION QUEST"
+      message="Preparing selected case for solution round..."
+      isMobileHorizontal={isMobileHorizontal}
+    />
   );
   if (error) return <div className="p-6 text-red-400">{error}</div>;
   if (selectedCaseId == null) return <div className="p-6 text-yellow-300">No case selected.</div>;
@@ -88,13 +109,17 @@ const Level2Screen2: React.FC<Level2Screen2Props> = ({ onProceedConfirmed, timer
   const question = hackathonData.find(q => q.id === selectedCaseId);
   if (!question) return <div className="p-6 text-red-400">Selected case not found.</div>;
 
-  // Only render the card, which includes the scenario/case description
   return (
-    <div>
+    <>
+      {/* Mobile Brief Popup (only in mobile horizontal) */}
+      <BriefPopup
+        show={showBrief}
+        description={question.caseFile}
+        isMobileHorizontal={isMobileHorizontal}
+        onClose={() => setShowBrief(false)}
+      />
       <Level2SolutionCard question={question} onProceedConfirmed={handleProceed} timer={restoredTimer} />
-      {/* You can add a button to manually trigger save for demo/testing */}
-      {/* <button onClick={handleProceed}>Save Progress & Continue</button> */}
-    </div>
+    </>
   );
 };
 

@@ -301,14 +301,7 @@ const Level2Simulation: React.FC = () => {
   const isCaseSelection = level2Screen === 1 && showLevel2Card;
   // Loader overlay at top level
   if (hideProgress) {
-    return (
-      <div className="fixed inset-0 flex flex-col items-center justify-center bg-gray-800 bg-opacity-95 z-50 animate-fadeIn">
-        <div className="w-16 h-16 rounded-full bg-yellow-200 flex items-center justify-center mb-6 animate-bounce">
-          <svg className="w-12 h-12 text-yellow-600 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth="4" className="opacity-25" /><path d="M4 12a8 8 0 018-8" strokeWidth="4" className="opacity-75" /></svg>
-        </div>
-        <div className="text-yellow-200 text-2xl font-black pixel-text text-center">Preparing selected case for solution round...</div>
-      </div>
-    );
+    return null;
   }
   // Handler to advance screen and show loader
   const handleAdvanceScreen = () => {
