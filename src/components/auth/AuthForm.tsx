@@ -218,6 +218,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode, onForgotPasswor
               collegeCode: formData.collegeCode,
               teamLead: '',
               teamMembers: [],
+              joinCode: joinCode,
+              sessionId: sessionId,
             }
           );
           if (error) {
@@ -316,6 +318,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode, onForgotPasswor
               collegeCode: team.college_code,
               teamLead: '',
               teamMembers: [],
+              joinCode: team.join_code,
+              sessionId: team.session_id,
             }
           );
           if (error) {
