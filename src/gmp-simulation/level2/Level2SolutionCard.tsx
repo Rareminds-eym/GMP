@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
-import { CheckCircle, Search, Target, AlertTriangle, ChevronRight } from "lucide-react";
+import { CheckCircle, Search, Target, AlertTriangle } from "lucide-react";
 import {
   DndContext,
   DragOverlay,
@@ -16,12 +16,11 @@ import {
 } from "@dnd-kit/core";
 import { useDeviceLayout } from "../../hooks/useOrientation";
 import { Question } from "../HackathonData";
-import PopupPortal from "../../components/ui/PopupPortal";
 
 interface Level2SolutionCardProps {
   question: Question;
-  onProceedConfirmed?: () => void;
-  timer: number;
+  selectedSolution: string;
+  setSelectedSolution: (solution: string) => void;
 }
 
 // Draggable Item Component (solution only)
@@ -64,7 +63,7 @@ interface DroppableZoneProps {
   children: React.ReactNode;
 }
 
-const DroppableZone: React.FC<DroppableZoneProps> = ({ id, type, selectedItem, children }) => {
+const DroppableZone: React.FC<DroppableZoneProps> = ({ id, type, children }) => {
   const { isOver, setNodeRef } = useDroppable({ id, data: { type, isDropZone: true } });
   return (
     <div ref={setNodeRef} className="h-full relative font-[Verdana,Arial,sans-serif]">
@@ -84,7 +83,7 @@ const DroppableZone: React.FC<DroppableZoneProps> = ({ id, type, selectedItem, c
 };
 
 
-const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onProceedConfirmed, timer }) => {
+const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, selectedSolution, setSelectedSolution }) => {
   // TODO: Replace with actual session_id, email, and module_number from context/auth
   let session_id = window.sessionStorage.getItem('session_id') || "";
   let email = window.sessionStorage.getItem('email') || "";
@@ -129,13 +128,12 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
     fetchAndSetUserFromWinnersList();
   }, []);
   const module_number = 6; // or get from props/context if dynamic
-  const question_index = 0; // always 0 for this table
 
   // Fetch saved solution on mount
   useEffect(() => {
     const fetchSavedSolution = async () => {
       if (!session_id || !email) return;
-      const { data, error } = await supabase
+  const { data } = await supabase
         .from('selected_solution')
         .select('solution')
         .eq('session_id', session_id)
@@ -149,8 +147,7 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
   }, [session_id, email, module_number]);
   const { isMobile, isHorizontal } = useDeviceLayout();
   const isMobileHorizontal = isMobile && isHorizontal;
-  const [selectedSolution, setSelectedSolution] = useState("");
-  const [showConfirm, setShowConfirm] = useState(false);
+  // selectedSolution and setSelectedSolution are now props
   const [activeItem, setActiveItem] = useState<{ text: string } | null>(null);
   const [showCaseChangeIndicator, setShowCaseChangeIndicator] = useState(false);
   const [previousQuestionId, setPreviousQuestionId] = useState<number | null>(null);
@@ -227,46 +224,7 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
     setSelectedSolution(draggedData.text);
   };
 
-  // Save selected solution to Supabase (solution only)
-  const saveSelectedSolution = async (solution: string) => {
-    if (!session_id || !email) {
-      console.warn('[DEBUG] Missing session_id or email, aborting save.');
-      return;
-    }
-    const is_correct = solution === question.correctSolution;
-    const score = is_correct ? 30 : 0;
-    const { data, error } = await supabase
-      .from('selected_solution')
-      .upsert([
-        {
-          session_id,
-          email,
-          module_number,
-          question_index,
-          solution,
-          is_correct,
-          score,
-          timer: timer,
-        },
-      ], { onConflict: 'session_id,email,module_number' });
-    if (error) {
-      console.error('[DEBUG] Error saving selected solution:', error.message, error.details);
-    }
-  };
 
-  // Call save on confirm
-  const handleProceed = () => {
-    saveSelectedSolution(selectedSolution);
-    if (typeof onProceedConfirmed === 'function') onProceedConfirmed();
-  };
-
-  // Close confirm modal after 5 seconds if open
-  useEffect(() => {
-    if (showConfirm) {
-      const timer = setTimeout(() => setShowConfirm(false), 5000); // Increase modal visibility to 5 seconds
-      return () => clearTimeout(timer);
-    }
-  }, [showConfirm]);
 
   return (
     <DndContext
@@ -421,65 +379,7 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, onPro
             </div>
           </div>
 
-          {/* Proceed Button - Fixed Position (matches Level 1) */}
-          <div className="absolute bottom-4 right-4 z-20">
-            <button
-              onClick={() => setShowConfirm(true)}
-              disabled={!selectedSolution}
-              className={`flex items-center space-x-2 px-4 py-3 pixel-border font-black pixel-text transition-all shadow-lg ${selectedSolution
-                ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white transform hover:scale-105"
-                : "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
-                }`}
-            >
-              <span className="text-sm">PROCEED</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-          {/* Confirm Modal (simple) and overlay */}
-          {showConfirm && (
-            <PopupPortal
-              isOpen={showConfirm}
-              onClose={() => setShowConfirm(false)}
-              className="bg-black bg-opacity-60 p-4 font-[Verdana,Arial,sans-serif]"
-              closeOnBackdropClick={true}
-            >
-              <div className="pixel-border-thick bg-yellow-100 w-full max-w-md text-center relative overflow-hidden animate-slideIn p-6 font-[Verdana,Arial,sans-serif]">
-                <div className="absolute inset-0 bg-pixel-pattern opacity-10"></div>
-                <div className="absolute inset-0 bg-scan-lines opacity-20"></div>
-                <button
-                  onClick={() => setShowConfirm(false)}
-                  className="absolute top-2 right-2 z-20 bg-yellow-200 hover:bg-yellow-300 text-yellow-900 rounded-full p-1 shadow pixel-border"
-                  aria-label="Close caution modal"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-                <div className="relative z-10">
-                  <div className="flex items-center justify-center space-x-2 mb-4">
-                    <div className="bg-yellow-400 pixel-border flex items-center justify-center w-8 h-8 animate-bounce relative">
-                      <span className="absolute inline-flex h-full w-full rounded-full bg-yellow-300 opacity-60 animate-ping"></span>
-                      <AlertTriangle className="text-yellow-900 w-5 h-5 relative z-10" />
-                    </div>
-                    <h2 className="font-black text-yellow-900 pixel-text text-lg">CAUTION</h2>
-                  </div>
-                  <div className="mb-6">
-                    <span className="font-bold text-yellow-900 pixel-text text-base">
-                      The selected answer cannot be reverted.
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setShowConfirm(false);
-                      handleProceed();
-                    }}
-                    className="pixel-border bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-300 hover:to-yellow-400 text-yellow-900 font-black pixel-text transition-all duration-200 flex items-center space-x-2 mx-auto py-3 px-6 transform hover:scale-105 shadow-lg"
-                  >
-                    <span className="text-sm">CONFIRM & PROCEED</span>
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </PopupPortal>
-          )}
+
 
           {/* Correct Violation & Root Cause - Right Panel (unchanged) */}
           <div className="w-1/3 flex flex-col min-h-0">

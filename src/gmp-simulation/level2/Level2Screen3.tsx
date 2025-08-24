@@ -1,5 +1,5 @@
 import { FileText, Globe, Lightbulb, Rocket, Sparkles, Target, Upload, Users, Zap } from 'lucide-react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDeviceLayout } from '../../hooks/useOrientation';
 import { supabase } from '../../lib/supabase';
@@ -18,13 +18,11 @@ import LoadingScreen from './components/LoadingScreen';
 import ResetProgressModal from './components/ResetProgressModal';
 import Toast from './components/Toast';
 import { convertProgressToFormData, useLevel2Screen3Progress } from './hooks/useLevel2Screen3Progress';
-import { PrototypeStageRef } from './components/stages/PrototypeStage';
+import { saveLevel2TimerState } from './level2ProgressHelpers';
 
-interface Level2Screen3Props {
-  timer: number;
-}
+interface Level2Screen3Props {}
 
-const Level2Screen3: React.FC<Level2Screen3Props> = ({ timer }) => {
+const Level2Screen3: React.FC<Level2Screen3Props> = () => {
   const [selectedCase, setSelectedCase] = useState<{ email: string; case_id: number; updated_at: string, description?: string } | null>(null);
   const navigate = useNavigate();
   const [showBrief, setShowBrief] = useState(false);
@@ -139,9 +137,29 @@ const Level2Screen3: React.FC<Level2Screen3Props> = ({ timer }) => {
   const [isInitialPageLoad, setIsInitialPageLoad] = useState(true);
   const { isMobile, isHorizontal } = useDeviceLayout();
   const isMobileHorizontal = isMobile && isHorizontal;
-  
-  // Ref for PrototypeStage to trigger file upload
-  const prototypeStageRef = useRef<PrototypeStageRef>(null);
+  // Timer logic: read persistent start time and calculate elapsed
+
+
+  // Handle timer reaching zero: end test and show final modal
+  const handleTimerTimeUp = useCallback(() => {
+    setIsLevelCompleted(true);
+    setShowCompletionPopup(true);
+  }, []);
+
+  // Auto-save timer handler
+  const handleSaveTimer = useCallback(
+    async (time: number) => {
+      if (user && user.id) {
+        try {
+          await saveLevel2TimerState(user.id, time);
+        } catch (err) {
+          // Optionally handle error (e.g., show toast)
+          console.error('[Level2Screen3] Failed to auto-save timer:', err);
+        }
+      }
+    },
+    [user]
+  );
 
   const showToast = useCallback((type: 'success' | 'error', message: string) => {
     setToast({ show: true, type, message });
@@ -415,24 +433,6 @@ const Level2Screen3: React.FC<Level2Screen3Props> = ({ timer }) => {
     console.log('📊 Completed stages:', completedStages);
     
     try {
-      // Special handling for stage 9 - trigger file upload if a file was selected
-      if (stage === 9) {
-        console.log('🔄 Stage 9 detected - checking for file upload');
-        if (prototypeStageRef.current) {
-          console.log('📤 Triggering file upload via ref');
-          const uploadSuccessful = await prototypeStageRef.current.uploadSelectedFile();
-          if (!uploadSuccessful) {
-            console.error('❌ File upload failed - not proceeding');
-            showToast('error', 'Failed to upload file. Please check your connection and try again.');
-            setIsSaving(false);
-            return;
-          }
-          console.log('✅ File upload completed successfully');
-        } else {
-          console.log('⚠️ No prototype stage ref available');
-        }
-      }
-      
       // Determine the next stage before saving
       let nextStage = stage;
       if (stage === 9) {
@@ -462,7 +462,6 @@ const Level2Screen3: React.FC<Level2Screen3Props> = ({ timer }) => {
       
       if (stage === 9) {
         console.log('🎭 Moving from stage 9 to 10');
-        showToast('success', 'Progress saved successfully!');
         setStage(10);
       } else if (stage === 10) {
         console.log('🏁 Completing final stage');
@@ -587,16 +586,9 @@ const Level2Screen3: React.FC<Level2Screen3Props> = ({ timer }) => {
             onShowBrief={() => setShowBrief(true)}
             progress={progress}
             timerStopped={isLevelCompleted}
-            savedTimer={timer}
-            onTimerTick={(updatedTime) => {
-              console.log('[Level2Screen3] Timer tick received:', updatedTime);
-              // Note: We don't update timer here as it's managed by parent Level2Simulation
-              // This callback is mainly for logging/monitoring purposes
-            }}
-            onTimerTimeUp={() => {
-              console.log('⏰ Timer expired in Level2Screen3');
-              // Handle timer expiration (e.g., show modal, save progress, etc.)
-            }}
+            autoSave={true}
+            onSaveTimer={handleSaveTimer}
+            onTimerTimeUp={handleTimerTimeUp}
           />
           
           {/* Loading/Error for Brief Button */}
@@ -626,7 +618,6 @@ const Level2Screen3: React.FC<Level2Screen3Props> = ({ timer }) => {
             onFormDataChange={handleFormDataChange}
             isMobileHorizontal={isMobileHorizontal}
             isAnimating={isAnimating}
-            prototypeStageRef={prototypeStageRef}
           />
 
           {/* Navigation Bar */}
@@ -658,7 +649,6 @@ const Level2Screen3: React.FC<Level2Screen3Props> = ({ timer }) => {
           <LevelCompletionPopup
             show={showCompletionPopup && isLevelCompleted}
             onContinue={() => navigate('/modules')}
-            isMobileHorizontal={isMobileHorizontal}
             message={
               <>
                 Congratulations! You have completed all stages of Level 2.
@@ -675,15 +665,15 @@ const Level2Screen3: React.FC<Level2Screen3Props> = ({ timer }) => {
             onConfirm={handleResetProgress}
           />
 
+          {/* Toast Notifications */}
+          <Toast
+            show={toast.show}
+            type={toast.type}
+            message={toast.message}
+            onClose={hideToast}
+          />
+
         </div>
-        
-        {/* Toast Notifications - Fixed to viewport */}
-        <Toast
-          show={toast.show}
-          type={toast.type}
-          message={toast.message}
-          onClose={hideToast}
-        />
       </div>
     </>
   );

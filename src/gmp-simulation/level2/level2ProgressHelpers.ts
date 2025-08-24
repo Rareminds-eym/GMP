@@ -4,20 +4,23 @@ export interface Level2Progress {
   user_id: string;
   current_screen: number;
   completed_screens: number[];
-  timer: number;
+  timer?: number;
 }
 
 export async function saveLevel2Progress({ user_id, current_screen, completed_screens, timer }: Level2Progress) {
+  const upsertObj: any = {
+    user_id,
+    current_screen,
+    completed_screens,
+    updated_at: new Date().toISOString(),
+  };
+  if (typeof timer === 'number') {
+    upsertObj.timer = timer;
+  }
   const { data, error } = await supabase
     .from('hl2_progress')
     .upsert([
-      {
-        user_id,
-        current_screen,
-        completed_screens,
-        timer,
-        updated_at: new Date().toISOString(),
-      },
+      upsertObj
     ], { onConflict: 'user_id' });
   if (error) throw error;
   return data;
