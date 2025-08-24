@@ -33,6 +33,8 @@ export function useGameSession(): GameSessionResult {
           return;
         }
         const userEmail = session.user.email;
+        // Ensure email is always available to the app, even if team lookup fails
+        setEmail(userEmail);
         const { data: countData, error: countError } = await supabase
           .from("teams")
           .select("session_id", { count: 'exact' })
