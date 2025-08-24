@@ -4,13 +4,15 @@ import { StageContentProps } from '../types';
 import TextInputStage from './stages/TextInputStage';
 import FinalStatementStage from './stages/FinalStatementStage';
 import PrototypeStage from './stages/PrototypeStage';
+import FillInBlanksStage from './stages/FillInBlanksStage';
 
 const StageContent: React.FC<StageContentProps> = ({ 
   stage, 
   formData, 
   onFormDataChange, 
   isMobileHorizontal, 
-  isAnimating 
+  isAnimating,
+  prototypeStageRef
 }) => {
   const handleTextChange = (field: keyof typeof formData) => (value: string) => {
     onFormDataChange(field, value);
@@ -19,6 +21,15 @@ const StageContent: React.FC<StageContentProps> = ({
   const renderStage = () => {
     switch (stage) {
       case 1:
+        return (
+          <FillInBlanksStage
+            value={formData.ideaStatement}
+            onChange={handleTextChange('ideaStatement')}
+            isMobileHorizontal={isMobileHorizontal}
+          />
+        );
+
+      case 2:
         return (
           <TextInputStage
             title="PROBLEM YOU ARE SOLVING"
@@ -34,7 +45,7 @@ const StageContent: React.FC<StageContentProps> = ({
           />
         );
 
-      case 2:
+      case 3:
         return (
           <TextInputStage
             title="TECHNOLOGY YOU CAN USE"
@@ -50,7 +61,7 @@ const StageContent: React.FC<StageContentProps> = ({
           />
         );
 
-      case 3:
+      case 4:
         return (
           <TextInputStage
             title="COLLABORATION ANGLE"
@@ -66,7 +77,7 @@ const StageContent: React.FC<StageContentProps> = ({
           />
         );
 
-      case 4:
+      case 5:
         return (
           <TextInputStage
             title="CREATIVITY TWIST"
@@ -82,7 +93,7 @@ const StageContent: React.FC<StageContentProps> = ({
           />
         );
 
-      case 5:
+      case 6:
         return (
           <TextInputStage
             title="SPEED & SCALE"
@@ -98,7 +109,7 @@ const StageContent: React.FC<StageContentProps> = ({
           />
         );
 
-      case 6:
+      case 7:
         return (
           <TextInputStage
             title="PURPOSE & IMPACT"
@@ -114,13 +125,13 @@ const StageContent: React.FC<StageContentProps> = ({
           />
         );
 
-      case 7:
+      case 8:
         return <FinalStatementStage formData={formData} onFormDataChange={onFormDataChange} isMobileHorizontal={isMobileHorizontal} />;
 
-      case 8:
-        return <PrototypeStage formData={formData} onFormDataChange={onFormDataChange} isMobileHorizontal={isMobileHorizontal} />;
-
       case 9:
+        return <PrototypeStage ref={prototypeStageRef} formData={formData} onFormDataChange={onFormDataChange} isMobileHorizontal={isMobileHorizontal} />;
+
+      case 10:
         return (
           <TextInputStage
             title="REFLECTION"

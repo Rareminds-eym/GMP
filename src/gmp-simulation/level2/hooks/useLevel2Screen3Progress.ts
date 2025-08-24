@@ -8,26 +8,32 @@ export interface Level2Screen3Progress {
   user_id: string;
   email: string;
   
-  // Form data fields
-  problem: string;
-  technology: string;
-  collaboration: string;
-  creativity: string;
-  speed_scale: string;
-  impact: string;
-  reflection: string;
+  // Idea statement fields (stage 1)
+  stage1_idea_what: string;
+  stage1_idea_who: string;
+  stage1_idea_how: string;
+  idea_statement?: string; // Computed field
   
-  // Final statement fields
-  final_problem: string;
-  final_technology: string;
-  final_collaboration: string;
-  final_creativity: string;
-  final_speed_scale: string;
-  final_impact: string;
+  // Form data fields with stage numbers
+  stage2_problem: string;
+  stage3_technology: string;
+  stage4_collaboration: string;
+  stage5_creativity: string;
+  stage6_speed_scale: string;
+  stage7_impact: string;
+  stage10_reflection: string;
   
-  // File storage
-  uploaded_file_name?: string;
-  uploaded_file_data?: string;
+  // Final statement fields (stage 8)
+  stage8_final_problem: string;
+  stage8_final_technology: string;
+  stage8_final_collaboration: string;
+  stage8_final_creativity: string;
+  stage8_final_speed_scale: string;
+  stage8_final_impact: string;
+  
+  // Prototype fields (stage 9)
+  stage9_prototype_file_name?: string;
+  stage9_prototype_file_data?: string;
   
   // Progress tracking
   current_stage: number;
@@ -66,10 +72,28 @@ export const useLevel2Screen3Progress = (): UseLevel2Screen3ProgressReturn => {
 
   // Calculate progress percentage based on completed stages
   const calculateProgressPercentage = useCallback((completedStages: number[]): number => {
-    // Only count stages that require user input (exclude always-complete/optional stages 7 and 8)
-    const inputStages = [1, 2, 3, 4, 5, 6, 9];
+    // Only count stages that require user input (exclude always-complete/optional stages 8 and 9)
+    const inputStages = [1, 2, 3, 4, 5, 6, 7, 10]; // Updated for 10 stages total
     const completedInputStages = completedStages.filter(stage => inputStages.includes(stage));
     return completedInputStages.length === 0 ? 0 : (completedInputStages.length / inputStages.length) * 100;
+  }, []);
+
+  // Helper function to parse idea statement into parts
+  const parseIdeaStatement = useCallback((ideaStatement: string) => {
+    if (!ideaStatement) {
+      return { what: '', who: '', how: '' };
+    }
+    
+    // Try to parse the existing format: "I want to solve X for Y by Z"
+    const match = ideaStatement.match(/I want to solve (.+) for (.+) by (.+)/);
+    if (match) {
+      return {
+        what: match[1]?.trim() || '',
+        who: match[2]?.trim() || '',
+        how: match[3]?.trim() || ''
+      };
+    }
+    return { what: '', who: '', how: '' };
   }, []);
 
   // Convert form data to progress format
@@ -78,44 +102,61 @@ export const useLevel2Screen3Progress = (): UseLevel2Screen3ProgressReturn => {
     currentStage: number,
     completedStages: number[]
   ): Partial<Level2Screen3Progress> => {
+    // Parse idea statement into individual parts
+    const ideaParts = parseIdeaStatement(formData.ideaStatement || '');
+    
     return {
-      problem: formData.problem || '',
-      technology: formData.technology || '',
-      collaboration: formData.collaboration || '',
-      creativity: formData.creativity || '',
-      speed_scale: formData.speedScale || '',
-      impact: formData.impact || '',
-      reflection: formData.reflection || '',
-      final_problem: formData.finalProblem || '',
-      final_technology: formData.finalTechnology || '',
-      final_collaboration: formData.finalCollaboration || '',
-      final_creativity: formData.finalCreativity || '',
-      final_speed_scale: formData.finalSpeedScale || '',
-      final_impact: formData.finalImpact || '',
-      uploaded_file_name: formData.file?.name,
+      // Idea statement fields (stage 1)
+      stage1_idea_what: ideaParts.what,
+      stage1_idea_who: ideaParts.who,
+      stage1_idea_how: ideaParts.how,
+      
+      // Form data fields with stage numbers
+      stage2_problem: formData.problem || '',
+      stage3_technology: formData.technology || '',
+      stage4_collaboration: formData.collaboration || '',
+      stage5_creativity: formData.creativity || '',
+      stage6_speed_scale: formData.speedScale || '',
+      stage7_impact: formData.impact || '',
+      stage10_reflection: formData.reflection || '',
+      stage8_final_problem: formData.finalProblem || '',
+      stage8_final_technology: formData.finalTechnology || '',
+      stage8_final_collaboration: formData.finalCollaboration || '',
+      stage8_final_creativity: formData.finalCreativity || '',
+      stage8_final_speed_scale: formData.finalSpeedScale || '',
+      stage8_final_impact: formData.finalImpact || '',
+      // Preserve existing S3 data - don't overwrite with local file data
+      // stage9_prototype_file_name and stage9_prototype_file_data are managed by PrototypeStage directly
       current_stage: currentStage,
       completed_stages: completedStages,
       progress_percentage: calculateProgressPercentage(completedStages),
-      is_completed: currentStage === 9 && completedStages.includes(9)
+      is_completed: currentStage === 10 && completedStages.includes(10) // Updated to stage 10
     };
-  }, [calculateProgressPercentage]);
+  }, [calculateProgressPercentage, parseIdeaStatement]);
 
   // Convert progress data to form format
   const progressToFormData = useCallback((progressData: Level2Screen3Progress): StageFormData => {
+    // Reconstruct the ideaStatement from the individual parts
+    let ideaStatement = '';
+    if (progressData.stage1_idea_what || progressData.stage1_idea_who || progressData.stage1_idea_how) {
+      ideaStatement = `I want to solve ${progressData.stage1_idea_what || ''} for ${progressData.stage1_idea_who || ''} by ${progressData.stage1_idea_how || ''}`;
+    }
+    
     return {
-      problem: progressData.problem || '',
-      technology: progressData.technology || '',
-      collaboration: progressData.collaboration || '',
-      creativity: progressData.creativity || '',
-      speedScale: progressData.speed_scale || '',
-      impact: progressData.impact || '',
-      reflection: progressData.reflection || '',
-      finalProblem: progressData.final_problem || '',
-      finalTechnology: progressData.final_technology || '',
-      finalCollaboration: progressData.final_collaboration || '',
-      finalCreativity: progressData.final_creativity || '',
-      finalSpeedScale: progressData.final_speed_scale || '',
-      finalImpact: progressData.final_impact || '',
+      ideaStatement: ideaStatement,
+      problem: progressData.stage2_problem || '',
+      technology: progressData.stage3_technology || '',
+      collaboration: progressData.stage4_collaboration || '',
+      creativity: progressData.stage5_creativity || '',
+      speedScale: progressData.stage6_speed_scale || '',
+      impact: progressData.stage7_impact || '',
+      reflection: progressData.stage10_reflection || '',
+      finalProblem: progressData.stage8_final_problem || '',
+      finalTechnology: progressData.stage8_final_technology || '',
+      finalCollaboration: progressData.stage8_final_collaboration || '',
+      finalCreativity: progressData.stage8_final_creativity || '',
+      finalSpeedScale: progressData.stage8_final_speed_scale || '',
+      finalImpact: progressData.stage8_final_impact || '',
       file: null // File objects can't be restored from database
     };
   }, []);
@@ -198,20 +239,8 @@ export const useLevel2Screen3Progress = (): UseLevel2Screen3ProgressReturn => {
       
       console.log('   - Final progressData to save:', progressData);
 
-      // Handle file data conversion to base64 if file exists
-      if (formData.file) {
-        try {
-          const fileBase64 = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(formData.file!);
-          });
-          progressData.uploaded_file_data = fileBase64;
-        } catch (fileError) {
-          console.warn('Could not convert file to base64:', fileError);
-        }
-      }
+      // Note: S3 file data is handled directly by PrototypeStage component
+      // We don't need to handle file conversion here anymore
 
       const { data, error: saveError } = await supabase
         .from('level2_screen3_progress')
@@ -343,20 +372,27 @@ export const useLevel2Screen3Progress = (): UseLevel2Screen3ProgressReturn => {
 
 // Utility functions for converting between formats
 export const convertProgressToFormData = (progressData: Level2Screen3Progress): StageFormData => {
+  // Reconstruct the ideaStatement from the individual parts
+  let ideaStatement = '';
+  if (progressData.stage1_idea_what || progressData.stage1_idea_who || progressData.stage1_idea_how) {
+    ideaStatement = `I want to solve ${progressData.stage1_idea_what || ''} for ${progressData.stage1_idea_who || ''} by ${progressData.stage1_idea_how || ''}`;
+  }
+  
   return {
-    problem: progressData.problem || '',
-    technology: progressData.technology || '',
-    collaboration: progressData.collaboration || '',
-    creativity: progressData.creativity || '',
-    speedScale: progressData.speed_scale || '',
-    impact: progressData.impact || '',
-    reflection: progressData.reflection || '',
-    finalProblem: progressData.final_problem || '',
-    finalTechnology: progressData.final_technology || '',
-    finalCollaboration: progressData.final_collaboration || '',
-    finalCreativity: progressData.final_creativity || '',
-    finalSpeedScale: progressData.final_speed_scale || '',
-    finalImpact: progressData.final_impact || '',
+    ideaStatement: ideaStatement,
+    problem: progressData.stage2_problem || '',
+    technology: progressData.stage3_technology || '',
+    collaboration: progressData.stage4_collaboration || '',
+    creativity: progressData.stage5_creativity || '',
+    speedScale: progressData.stage6_speed_scale || '',
+    impact: progressData.stage7_impact || '',
+    reflection: progressData.stage10_reflection || '',
+    finalProblem: progressData.stage8_final_problem || '',
+    finalTechnology: progressData.stage8_final_technology || '',
+    finalCollaboration: progressData.stage8_final_collaboration || '',
+    finalCreativity: progressData.stage8_final_creativity || '',
+    finalSpeedScale: progressData.stage8_final_speed_scale || '',
+    finalImpact: progressData.stage8_final_impact || '',
     file: null // File objects can't be restored from database
   };
 };

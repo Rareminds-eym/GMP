@@ -53,7 +53,7 @@ const Level2Game: React.FC<Level2GameProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gray-800 flex flex-col items-center justify-center p-2 relative">
+    <div className="min-h-screen bg-gray-800 flex flex-col items-center justify-center relative">
       {/* Header and info */}
       <div className="pixel-border-thick bg-gradient-to-r from-purple-600 to-purple-700 p-4 max-w-xl w-full text-center relative z-10 mb-4">
         <div className="flex justify-center mb-4">

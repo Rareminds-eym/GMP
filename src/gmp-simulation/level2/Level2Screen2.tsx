@@ -1,102 +1,248 @@
 import React, { useEffect, useState } from "react";
+import { useDeviceLayout } from "../../hooks/useOrientation";
+import BriefPopup from "./components/BriefPopup";
+import LoadingScreen from "./components/LoadingScreen";
 import { supabase } from "../../lib/supabase";
 import { hackathonData } from "../HackathonData";
 import Level2SolutionCard from "./Level2SolutionCard";
-import { restoreHL2Progress, saveHL2Progress } from "./level2Services";
-
+import Header from "./components/Header";
+import { saveLevel2TimerState } from "./level2ProgressHelpers";
+import {
+  restoreHL2Progress,
+  saveHL2Progress,
+} from "./level2Services";
 
 interface Level2Screen2Props {
   onProceedConfirmed?: () => void;
-  timer: number;
 }
 
-
-const Level2Screen2: React.FC<Level2Screen2Props> = ({ onProceedConfirmed, timer }) => {
+const Level2Screen2: React.FC<Level2Screen2Props> = ({ onProceedConfirmed }) => {
   const [selectedCaseId, setSelectedCaseId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [restoredTimer, setRestoredTimer] = useState<number>(timer);
+  const [showBrief, setShowBrief] = useState(false);
+  const [selectedSolution, setSelectedSolution] = useState("");
+  const { isMobile, isHorizontal } = useDeviceLayout();
+  const isMobileHorizontal = isMobile && isHorizontal;
+
+  // Timer logic: read persistent start time and calculate elapsed
+  const [savedTimer, setSavedTimer] = useState<number | null>(null);
+  useEffect(() => {
+    const timerStart = window.sessionStorage.getItem("level2_timer_start");
+    if (timerStart) {
+      const elapsed = Math.floor(
+        (Date.now() - parseInt(timerStart, 10)) / 1000
+      );
+      setSavedTimer(elapsed > 0 ? elapsed : 0);
+    }
+  }, []);
+
+  // Auto-save timer handler
+  const handleSaveTimer = React.useCallback(
+    async (time: number) => {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user || !user.id) return;
+      try {
+        await saveLevel2TimerState(user.id, time);
+      } catch (err) {
+        // Optionally handle error (e.g., show toast)
+        console.error('[Level2Screen2] Failed to auto-save timer:', err);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
     const fetchProgressAndCase = async () => {
       setLoading(true);
       setError(null);
       try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError || !user || !user.id) throw new Error("User not authenticated");
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser();
+        if (authError || !user || !user.id)
+          throw new Error("User not authenticated");
+
         // Restore progress
         const progress = await restoreHL2Progress(user.id);
-        console.log('[Level2Screen2] Restored progress:', progress);
-        if (progress) {
-          setRestoredTimer(progress.timer);
-        }
-        // Fetch selected case as before
+        console.log("[Level2Screen2] Restored progress:", progress);
+
+        // Fetch selected case
         const { data, error } = await supabase
           .from("selected_cases")
           .select("case_id")
           .eq("email", user.email)
           .maybeSingle();
         if (error) throw error;
-        if (!data) {
-          setSelectedCaseId(null);
-        } else {
+
+        if (data) {
           setSelectedCaseId(data.case_id);
+        } else {
+          setSelectedCaseId(null);
         }
       } catch (err: any) {
-        setError(err.message || "Failed to fetch selected case");
+        console.error("[Level2Screen2] Error fetching case:", err);
+        setError(err.message || "Unknown error");
       } finally {
-        timeoutId = setTimeout(() => setLoading(false), 500);
+        setLoading(false);
       }
     };
-    fetchProgressAndCase();
-    return () => { if (timeoutId) clearTimeout(timeoutId); };
-  }, []);
 
-  // Example: Save progress when proceeding (call this in your navigation logic)
+    fetchProgressAndCase();
+
+    // Hide brief if not in mobile horizontal
+    if (!isMobileHorizontal && showBrief) {
+      setShowBrief(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobileHorizontal]);
+
+  // Save selected solution to Supabase (solution only)
+  const saveSelectedSolution = async (solution: string) => {
+    let session_id = window.sessionStorage.getItem("session_id") || "";
+    let email = window.sessionStorage.getItem("email") || "";
+    const module_number = 6;
+    const question_index = 0;
+
+    if (!session_id || !email) {
+      console.warn(
+        "[DEBUG] Missing session_id or email, aborting save."
+      );
+      return;
+    }
+
+    const question = hackathonData.find((q) => q.id === selectedCaseId);
+    if (!question) return;
+
+    const is_correct = solution === question.correctSolution;
+    const score = is_correct ? 30 : 0;
+
+    const { error } = await supabase.from("selected_solution").upsert(
+      [
+        {
+          session_id,
+          email,
+          module_number,
+          question_index,
+          solution,
+          is_correct,
+          score,
+        },
+      ],
+      { onConflict: "session_id,email,module_number" }
+    );
+
+    if (error) {
+      console.error(
+        "[DEBUG] Error saving selected solution:",
+        error.message,
+        error.details
+      );
+    }
+  };
+
   const handleProceed = async () => {
     setLoading(true);
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user || !user.id) throw new Error("User not authenticated");
+      await saveSelectedSolution(selectedSolution);
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+      if (authError || !user || !user.id)
+        throw new Error("User not authenticated");
+
+      // Get existing progress to merge completed screens
+      const existingProgress = await restoreHL2Progress(user.id);
+      const existingCompletedScreens =
+        existingProgress?.completed_screens || [];
+
+      // Merge current screen with existing completed screens
+      const completedScreens = [...existingCompletedScreens];
+      if (!completedScreens.includes(2)) {
+        completedScreens.push(2);
+      }
+
       const progressToSave = {
         user_id: user.id,
-        current_screen: 2,
-        completed_screens: [2], // Add logic to merge with previous completed screens
-        timer: restoredTimer,
+        current_screen: 3, // Move to next screen
+        completed_screens: completedScreens,
       };
-      console.log('[Level2Screen2] Saving progress:', progressToSave);
+
+      console.log("[Level2Screen2] Saving progress:", progressToSave);
       await saveHL2Progress(progressToSave);
+
       if (onProceedConfirmed) onProceedConfirmed();
-    } catch (err) {
-      setError("Failed to save progress");
+    } catch (err: any) {
+      console.error("[Level2Screen2] Error saving progress:", err);
+      setError("Failed to save progress: " + (err.message || "Unknown error"));
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) return (
-    <div className="min-h-[300px] flex flex-col items-center justify-center bg-gray-800 rounded-lg p-8 animate-fadeIn">
-      <div className="w-12 h-12 rounded-full bg-yellow-200 flex items-center justify-center mb-4 animate-bounce">
-        <svg className="w-8 h-8 text-yellow-600 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10" strokeWidth="4" className="opacity-25" /><path d="M4 12a8 8 0 018-8" strokeWidth="4" className="opacity-75" /></svg>
-      </div>
-      <div className="text-yellow-200 text-lg font-bold pixel-text text-center">Preparing selected case for solution round...</div>
-    </div>
-  );
+  if (loading)
+    return (
+      <LoadingScreen
+        title="SOLUTION QUEST"
+        message="Preparing selected case for solution round..."
+        isMobileHorizontal={isMobileHorizontal}
+      />
+    );
+
   if (error) return <div className="p-6 text-red-400">{error}</div>;
-  if (selectedCaseId == null) return <div className="p-6 text-yellow-300">No case selected.</div>;
+  if (selectedCaseId == null)
+    return <div className="p-6 text-yellow-300">No case selected.</div>;
 
   // Find the question data for the selected case
-  const question = hackathonData.find(q => q.id === selectedCaseId);
-  if (!question) return <div className="p-6 text-red-400">Selected case not found.</div>;
+  const question = hackathonData.find((q) => q.id === selectedCaseId);
+  if (!question)
+    return <div className="p-6 text-red-400">Selected case not found.</div>;
 
-  // Only render the card, which includes the scenario/case description
   return (
-    <div>
-      <Level2SolutionCard question={question} onProceedConfirmed={handleProceed} timer={restoredTimer} />
-      {/* You can add a button to manually trigger save for demo/testing */}
-      {/* <button onClick={handleProceed}>Save Progress & Continue</button> */}
-    </div>
+    <>
+      {/* Header for Solution Round */}
+      <Header
+        currentStageData={{
+          icon: () => <span className="text-blue-300">💡</span>,
+          title: "Solution Round",
+          subtitle: "Solve",
+          color: "from-blue-500 to-blue-400",
+          bgColor: "from-blue-900/20 to-blue-900/10",
+          accent: "blue",
+          description: "Submit your solution for the selected case",
+          caseNumber: 2,
+        }}
+        isMobileHorizontal={isMobileHorizontal}
+        selectedCase={
+          selectedCaseId
+            ? { email: "", case_id: selectedCaseId, updated_at: "" }
+            : undefined
+        }
+        titleText="SOLUTION QUEST"
+        onShowBrief={() => setShowBrief(true)}
+        onProceed={selectedSolution ? handleProceed : undefined}
+        canProceed={!!selectedSolution}
+        savedTimer={savedTimer || undefined}
+        autoSave={true}
+        onSaveTimer={handleSaveTimer}
+      />
+
+      {/* Mobile Brief Popup (only in mobile horizontal) */}
+      <BriefPopup
+        show={showBrief}
+        description={question.caseFile}
+        isMobileHorizontal={isMobileHorizontal}
+        onClose={() => setShowBrief(false)}
+      />
+
+      <Level2SolutionCard
+        question={question}
+        selectedSolution={selectedSolution}
+        setSelectedSolution={setSelectedSolution}
+      />
+    </>
   );
 };
 

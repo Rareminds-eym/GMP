@@ -4,11 +4,13 @@ import { Loader2 } from 'lucide-react';
 interface LoadingScreenProps {
   message?: string;
   isMobileHorizontal?: boolean;
+  title?: string;
 }
 
 const LoadingScreen: React.FC<LoadingScreenProps> = ({ 
   message = "Loading your progress...", 
-  isMobileHorizontal = false 
+  isMobileHorizontal = false,
+  title = "INNOVATION QUEST"
 }) => {
   return (
     <div className="fixed inset-0 bg-gray-800 flex items-center justify-center z-50">
@@ -39,7 +41,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
                 : '3px 3px 0px rgba(0,0,0,0.7), 0 0 20px rgba(6,182,212,0.5)' 
             }}
           >
-            INNOVATION QUEST
+            {title}
           </h2>
           <p className={`text-cyan-200 ${isMobileHorizontal ? 'text-sm' : 'text-base'} font-medium animate-pulse`}>
             {message}
