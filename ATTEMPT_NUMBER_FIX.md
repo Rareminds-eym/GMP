@@ -1,7 +1,7 @@
 # Attempt Number Fix Summary
 
 ## Problem Identified
-The attempt number was not increasing properly when users played the same module multiple times. Each new attempt was being saved with attempt_number = 1 instead of incrementing (1, 2, 3).
+The attempt number was not increasing properly when users played the same module multiple times. Each new attempt was being saved with attempt_number = 1 instead of incrementing (1, 2, 3). 
 
 ## Root Cause Analysis
 
