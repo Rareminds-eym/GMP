@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Upload, CheckCircle, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { StageProps } from '../../types';
 import { uploadFileToS3 } from '../../../../utils/awsConfig';
+import Toast from '../Toast';
 
 const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMobileHorizontal }) => {
   const [isUploading, setIsUploading] = useState(false);
@@ -10,40 +11,111 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
   const [lastSelectedFile, setLastSelectedFile] = useState<File | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [toast, setToast] = useState<{ show: boolean; type: 'success' | 'error'; message: string }>({
+    show: false,
+    type: 'success',
+    message: ''
+  });
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadAbortControllerRef = useRef<AbortController | null>(null);
+  
   const MAX_RETRY_ATTEMPTS = 3;
+  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+  const ALLOWED_FILE_TYPES = ['application/pdf'] as const;
+  
+  const showToast = useCallback((type: 'success' | 'error', message: string) => {
+    setToast({ show: true, type, message });
+  }, []);
 
-  const uploadFile = async (file: File, isRetry = false) => {
+  const hideToast = useCallback(() => {
+    setToast(prev => ({ ...prev, show: false }));
+  }, []);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (uploadAbortControllerRef.current) {
+        uploadAbortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  const uploadFile = useCallback(async (file: File, isRetry = false) => {
+    // Create abort controller for this upload
+    uploadAbortControllerRef.current = new AbortController();
+    
     try {
       setIsUploading(true);
       setUploadError(null);
+      setUploadProgress(0);
       
       if (!isRetry) {
         setRetryCount(0);
       }
       
-      // Upload to S3
-      const s3Location = await uploadFileToS3(file);
-      
-      if (!s3Location) {
-        throw new Error('Upload failed: No URL returned');
+      // Additional file validation
+      if (!file || file.size === 0) {
+        throw new Error('Invalid file selected');
       }
       
-      setS3Url(s3Location);
+      // Strict PDF validation before upload
+      if (!isPdfFile(file)) {
+        throw new Error('Only PDF files are allowed. Please select a valid PDF document.');
+      }
       
-      // Update form data with the file
-      onFormDataChange('file', file);
+      if (file.size > MAX_FILE_SIZE) {
+        throw new Error(`File size (${(file.size / (1024 * 1024)).toFixed(1)}MB) exceeds the ${MAX_FILE_SIZE / (1024 * 1024)}MB limit`);
+      }
       
-      console.log('File uploaded successfully to S3:', s3Location);
+      // Simulate progress for better UX
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 10, 90));
+      }, 200);
       
-      // Reset retry count on successful upload
-      setRetryCount(0);
+      try {
+        // Upload to S3
+        const s3Location = await uploadFileToS3(file);
+        
+        if (!s3Location) {
+          throw new Error('Upload failed: No URL returned');
+        }
+        
+        // Complete progress
+        clearInterval(progressInterval);
+        setUploadProgress(100);
+        
+        setS3Url(s3Location);
+        
+        // Update form data with the file
+        onFormDataChange('file', file);
+        
+        // Show success toast
+        showToast('success', 'The file uploaded successfully!');
+        
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.log('File uploaded successfully to S3:', s3Location);
+        }
+        
+        // Reset retry count on successful upload
+        setRetryCount(0);
+      } finally {
+        clearInterval(progressInterval);
+      }
     } catch (uploadError: any) {
-      console.error('S3 upload failed:', uploadError);
+      // Don't log error if upload was aborted
+      if (uploadError?.name !== 'AbortError') {
+        console.error('S3 upload failed:', uploadError);
+      }
       
       let errorMessage = 'Failed to upload file to cloud storage.';
       
       // Handle specific error types
-      if (uploadError?.name === 'NetworkError' || uploadError?.code === 'NetworkingError') {
+      if (uploadError?.name === 'AbortError') {
+        errorMessage = 'Upload was cancelled.';
+      } else if (uploadError?.name === 'NetworkError' || uploadError?.code === 'NetworkingError') {
         errorMessage = 'Network error. Please check your internet connection and try again.';
       } else if (uploadError?.code === 'AccessDenied') {
         errorMessage = 'Access denied. Please contact support.';
@@ -60,50 +132,68 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
       }
       
       // Add retry information to error message
-      if (retryCount > 0) {
+      if (retryCount > 0 && uploadError?.name !== 'AbortError') {
         errorMessage += ` (Attempt ${retryCount + 1}/${MAX_RETRY_ATTEMPTS + 1})`;
       }
       
       setUploadError(errorMessage);
       
       // Still update form data with local file for UI purposes
-      onFormDataChange('file', file);
+      if (uploadError?.name !== 'AbortError') {
+        onFormDataChange('file', file);
+      }
       
-      throw uploadError;
+      if (uploadError?.name !== 'AbortError') {
+        throw uploadError;
+      }
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
+      uploadAbortControllerRef.current = null;
     }
-  };
+  }, [onFormDataChange, retryCount]);
 
-  const isPdfFile = (file: File): boolean => {
+  const isPdfFile = useCallback((file: File): boolean => {
     // Multiple validation layers for PDF files
     
-    // 1. Check MIME type
-    if (file.type !== 'application/pdf') {
+    // 1. Check MIME type - be strict about PDF mime types
+    const validMimeTypes = ['application/pdf'];
+    if (!validMimeTypes.includes(file.type)) {
       return false;
     }
     
-    // 2. Check file extension
+    // 2. Check file extension - case insensitive
     const fileName = file.name.toLowerCase();
     if (!fileName.endsWith('.pdf')) {
       return false;
     }
     
-    // 3. Additional MIME type checks (some browsers may report different types)
-    const allowedMimeTypes = [
-      'application/pdf',
-      'application/x-pdf',
-      'application/x-bzpdf',
-      'application/x-gzpdf'
-    ];
+    // 3. Additional security check - validate file name structure
+    // Allow common filename patterns but ensure it's a PDF
+    const hasValidPdfExtension = /\.pdf$/i.test(file.name);
+    if (!hasValidPdfExtension) {
+      return false;
+    }
     
-    return allowedMimeTypes.includes(file.type);
-  };
+    // 4. Check for reasonable file size
+    if (file.size > MAX_FILE_SIZE || file.size === 0) {
+      return false;
+    }
+    
+    // 5. Basic file name safety (allow most characters but ensure PDF extension)
+    const hasOnlyPdfExtension = file.name.split('.').pop()?.toLowerCase() === 'pdf';
+    if (!hasOnlyPdfExtension) {
+      return false;
+    }
+    
+    return true;
+  }, []);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     // Reset previous states
     setUploadError(null);
     setS3Url(null);
+    setUploadProgress(0);
     
     try {
       if (!e.target.files || !e.target.files[0]) {
@@ -118,13 +208,16 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
         throw new Error('Only PDF files are allowed. Please select a valid PDF document.');
       }
       
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit
-        throw new Error('File size must be less than 2MB');
+      if (file.size > MAX_FILE_SIZE) {
+        throw new Error(`File size must be less than ${MAX_FILE_SIZE / (1024 * 1024)}MB`);
       }
       
       await uploadFile(file);
     } catch (error: any) {
-      console.error('File upload error:', error);
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.error('File upload error:', error);
+      }
       
       // If not already set by uploadFile, set a general error
       if (!uploadError) {
@@ -138,13 +231,13 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
       }
     } finally {
       // Clear the input to allow re-uploading the same file if needed
-      if (e.target) {
-        e.target.value = '';
+      if (e.target && fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
     }
-  };
+  }, [isPdfFile, uploadFile, uploadError]);
 
-  const handleRetryUpload = async () => {
+  const handleRetryUpload = useCallback(async () => {
     if (!lastSelectedFile) {
       setUploadError('No file to retry upload');
       return;
@@ -160,23 +253,25 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
       await uploadFile(lastSelectedFile, true);
     } catch (error) {
       // Error is already handled in uploadFile
-      console.error('Retry upload failed:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Retry upload failed:', error);
+      }
     }
-  };
+  }, [lastSelectedFile, retryCount, uploadFile]);
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(true);
-  };
+  }, []);
 
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
-  };
+  }, []);
 
-  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
@@ -184,6 +279,7 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
     // Reset previous states
     setUploadError(null);
     setS3Url(null);
+    setUploadProgress(0);
     
     try {
       const files = Array.from(e.dataTransfer.files);
@@ -204,13 +300,16 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
         throw new Error('Only PDF files are allowed. Please drop a valid PDF document.');
       }
       
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit
-        throw new Error('File size must be less than 2MB');
+      if (file.size > MAX_FILE_SIZE) {
+        throw new Error(`File size must be less than ${MAX_FILE_SIZE / (1024 * 1024)}MB`);
       }
       
       await uploadFile(file);
     } catch (error: any) {
-      console.error('File drop error:', error);
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.error('File drop error:', error);
+      }
       
       let errorMessage = 'An unexpected error occurred.';
       
@@ -220,7 +319,7 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
       
       setUploadError(errorMessage);
     }
-  };
+  }, [isPdfFile, uploadFile]);
 
   return (
     <div className={`${isMobileHorizontal ? 'space-y-3' : 'space-y-8'} animate-fadeIn`}>
@@ -288,11 +387,13 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
                     {isDragOver ? 'RELEASE TO UPLOAD PDF' : 'DRAG & DROP OR CLICK TO BROWSE'}
                   </span>
                   <input
+                    ref={fileInputRef}
                     id="file-upload"
                     type="file"
-                    accept="application/pdf"
+                    accept="application/pdf,.pdf"
                     className="hidden"
                     onChange={handleFileChange}
+                    disabled={isUploading}
                   />
                   <div 
                     className={`pixel-border inline-flex items-center px-6 py-3 bg-gradient-to-r from-pink-500 to-yellow-500 hover:from-pink-600 hover:to-yellow-600 text-white transition-colors duration-300 font-black shadow-lg ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -379,10 +480,25 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
                       <p className="text-green-300 text-sm mt-1 font-bold">
                         {s3Url ? 'FILE UPLOADED TO CLOUD STORAGE' : 'FILE SELECTED (UPLOAD FAILED)'}
                       </p>
-                      {s3Url && (
+                      {s3Url && process.env.NODE_ENV === 'development' && (
                         <p className="text-green-200 text-xs mt-1 break-all">
                           URL: {s3Url}
                         </p>
+                      )}
+                      {/* Upload Progress */}
+                      {isUploading && (
+                        <div className="mt-2">
+                          <div className="flex items-center justify-between text-xs text-green-300 mb-1">
+                            <span>Uploading...</span>
+                            <span>{uploadProgress}%</span>
+                          </div>
+                          <div className="w-full bg-gray-700 rounded-full h-1">
+                            <div 
+                              className="bg-green-400 h-1 rounded-full transition-all duration-300"
+                              style={{ width: `${uploadProgress}%` }}
+                            />
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -407,6 +523,14 @@ const PrototypeStage: React.FC<StageProps> = ({ formData, onFormDataChange, isMo
           </div>
         </div>
       </div>
+      
+      {/* Toast Notifications */}
+      <Toast
+        show={toast.show}
+        type={toast.type}
+        message={toast.message}
+        onClose={hideToast}
+      />
     </div>
   );
 };
