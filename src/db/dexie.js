@@ -20,7 +20,10 @@ export class OfflineDatabase extends Dexie {
       level3_progress: 'id, user_id, module, level, scenario_index, score, placed_pieces, is_completed, current_score, time_taken, total_attempts, score_history, time_history, created_at, updated_at, [user_id+module+level+scenario_index]',
 
       // level_4 table
-      level_4: 'id, user_id, module, level, score, time_history, score_history, cases, is_completed, created_at, updated_at, time, [user_id+module]'
+      level_4: 'id, user_id, module, level, score, time_history, score_history, cases, is_completed, created_at, updated_at, time, [user_id+module]',
+
+      // level2_screen3_progress table
+      level2_screen3_progress: 'id, user_id, email, problem, technology, collaboration, creativity, speed_scale, impact, reflection, final_problem, final_technology, final_collaboration, final_creativity, final_speed_scale, final_impact, uploaded_file_name, uploaded_file_data, current_stage, completed_stages, is_completed, progress_percentage, selected_case_id, created_at, updated_at, completed_at, [user_id]'
     });
 
     // Define table references for easy access
@@ -29,6 +32,7 @@ export class OfflineDatabase extends Dexie {
     this.level2GameData = this.table('level2_game_data');
     this.level3Progress = this.table('level3_progress');
     this.level4 = this.table('level_4');
+    this.level2Screen3Progress = this.table('level2_screen3_progress');
   }
 }
 
@@ -36,7 +40,7 @@ export class OfflineDatabase extends Dexie {
 export const db = new OfflineDatabase();
 
 // Helper function to get all table names
-export const getTableNames = () => ['level_progress', 'level_1', 'level2_game_data', 'level3_progress', 'level_4'];
+export const getTableNames = () => ['level_progress', 'level_1', 'level2_game_data', 'level3_progress', 'level_4', 'level2_screen3_progress'];
 
 // Helper function to clear all offline data
 export const clearOfflineData = async () => {

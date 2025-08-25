@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { collegeCodes as collegeCodeList } from '../../data/collegeCodes';
 import { useDeviceLayout } from '../../hooks/useOrientation';
 import { supabase } from '../../lib/supabase';
+import PopupPortal from '../ui/PopupPortal';
 
 interface AuthFormProps {
   mode: 'login' | 'signup' | 'forgot-password'
@@ -169,26 +170,25 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode, onForgotPasswor
       } else {
         if (formData.isTeamLeader) {
           // Team leader signup: create team, generate join code
-          // 1. Check if email already exists in teams table
+          // 1. Check if email already exists to determine join code and session ID
           const { data: existingEmailRows, error: emailCheckError } = await supabase
             .from('teams')
-            .select('*')
-            .eq('email', formData.email);
+            .select('join_code, session_id')
+            .eq('email', formData.email)
+            .limit(1);
           if (emailCheckError) {
             setError('Error checking email. Please try again.');
             setIsSubmitting(false);
             return;
           }
 
-          let shouldUpdateExisting = false;
-          let existingRecord = null;
-          if (existingEmailRows && existingEmailRows.length > 0) {
-            shouldUpdateExisting = true;
-            existingRecord = existingEmailRows[0];
-          }
+          // Keep existing join code for team leaders, generate new for new teams
+          const existingRecord = existingEmailRows && existingEmailRows.length > 0 ? existingEmailRows[0] : null;
+          const joinCode = existingRecord ? existingRecord.join_code : generateJoinCode().toUpperCase().trim();
+          const sessionId = existingRecord ? existingRecord.session_id : uuidv4();
 
-          // 2. Check if team name already exists (only if not updating existing record)
-          if (!shouldUpdateExisting) {
+          // 2. Check if team name already exists (only for new teams)
+          if (!existingRecord) {
             const { data: existingTeams, error: teamCheckError } = await supabase
               .from('teams')
               .select('team_name')
@@ -204,10 +204,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode, onForgotPasswor
               return;
             }
           }
-          // Keep existing join code for team leaders, generate new for new teams
-          const joinCode = shouldUpdateExisting ? existingRecord.join_code : generateJoinCode().toUpperCase().trim();
-          const sessionId = shouldUpdateExisting ? existingRecord.session_id : uuidv4();
 
+          // 3. Create auth user first
           const { error } = await signUp(
             formData.email,
             formData.password,
@@ -218,6 +216,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode, onForgotPasswor
               collegeCode: formData.collegeCode,
               teamLead: '',
               teamMembers: [],
+              joinCode: joinCode,
+              sessionId: sessionId,
             }
           );
           if (error) {
@@ -225,50 +225,31 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode, onForgotPasswor
             setIsSubmitting(false);
             return;
           }
+
+          // 4. Get the created user
           const { data: { user } } = await supabase.auth.getUser();
-          const { fullName, phone, teamName, collegeCode, email } = formData;
-          const teamRow: {
-            email: string;
-            full_name: string;
-            phone: string;
-            team_name: string;
-            college_code: string;
-            is_team_leader: boolean;
-            session_id: string;
-            join_code: string;
-            user_id?: string;
-          } = {
-            email,
-            full_name: fullName,
-            phone,
-            team_name: teamName,
-            college_code: collegeCode,
-            is_team_leader: true,
-            session_id: sessionId,
-            join_code: joinCode,
-          };
-          if (user && user.id) {
-            teamRow.user_id = user.id;
-          }
 
-          // Update existing record or insert new one
-          let dbError;
-          if (shouldUpdateExisting) {
-            const { error: updateError } = await supabase
-              .from('teams')
-              .update(teamRow)
-              .eq('email', formData.email);
-            dbError = updateError;
-          } else {
-            const { error: insertError } = await supabase.from('teams').insert([teamRow]);
-            dbError = insertError;
-          }
+          // 5. Use upsert function to handle teams table
+          const { data: upsertResult, error: upsertError } = await supabase
+            .rpc('upsert_team_member', {
+              p_email: formData.email,
+              p_full_name: formData.fullName,
+              p_phone: formData.phone,
+              p_team_name: formData.teamName,
+              p_college_code: formData.collegeCode,
+              p_is_team_leader: true,
+              p_session_id: sessionId,
+              p_join_code: joinCode,
+              p_user_id: user?.id || null
+            });
 
-          if (dbError) {
-            setError(`Team ${shouldUpdateExisting ? 'update' : 'creation'} failed: ` + dbError.message);
+          if (upsertError || !upsertResult || upsertResult.length === 0 || !upsertResult[0].success) {
+            const errorMsg = upsertError?.message || upsertResult?.[0]?.message || 'Unknown error';
+            setError('Team creation failed: ' + errorMsg);
             setIsSubmitting(false);
             return;
           }
+
           setGeneratedJoinCode(joinCode);
           setSuccess('Account created! Please verify your email. Share this join code with your team: ' + joinCode.toUpperCase());
           setShowResendLink(true);
@@ -276,10 +257,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode, onForgotPasswor
         } else {
           // Team member signup: join with code
           const joinCodeInput = formData.joinCode.trim().toUpperCase();
+          
+          // 1. Find team by join code
           const { data: teamRows, error: teamError } = await supabase
             .from('teams')
             .select('*')
-            .eq('join_code', joinCodeInput);
+            .eq('join_code', joinCodeInput)
+            .eq('is_team_leader', true)
+            .limit(1);
           if (teamError) {
             setError('Error finding team. Please try again.');
             setIsSubmitting(false);
@@ -290,6 +275,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode, onForgotPasswor
             setIsSubmitting(false);
             return;
           }
+
+          // 2. Check team size
           const { data: teamMembers, error: countError } = await supabase
             .from('teams')
             .select('id', { count: 'exact', head: true })
@@ -304,8 +291,11 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode, onForgotPasswor
             setIsSubmitting(false);
             return;
           }
+
           const team = teamRows[0];
           setPrefilledTeam({ teamName: team.team_name, collegeCode: team.college_code });
+          
+          // 3. Create auth user first
           const { error } = await signUp(
             formData.email,
             formData.password,
@@ -316,6 +306,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode, onForgotPasswor
               collegeCode: team.college_code,
               teamLead: '',
               teamMembers: [],
+              joinCode: team.join_code,
+              sessionId: team.session_id,
             }
           );
           if (error) {
@@ -323,37 +315,31 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode, onForgotPasswor
             setIsSubmitting(false);
             return;
           }
+
+          // 4. Get the created user
           const { data: { user } } = await supabase.auth.getUser();
-          const { fullName, phone, email } = formData;
-          const teamRow: {
-            email: string;
-            full_name: string;
-            phone: string;
-            team_name: string;
-            college_code: string;
-            is_team_leader: boolean;
-            session_id: string;
-            join_code: string;
-            user_id?: string;
-          } = {
-            email,
-            full_name: fullName,
-            phone,
-            team_name: team.team_name,
-            college_code: team.college_code,
-            is_team_leader: false,
-            session_id: team.session_id,
-            join_code: team.join_code,
-          };
-          if (user && user.id) {
-            teamRow.user_id = user.id;
-          }
-          const { error: insertError } = await supabase.from('teams').insert([teamRow]);
-          if (insertError) {
-            setError('Failed to join team: ' + insertError.message);
+
+          // 5. Use upsert function to handle teams table
+          const { data: upsertResult, error: upsertError } = await supabase
+            .rpc('upsert_team_member', {
+              p_email: formData.email,
+              p_full_name: formData.fullName,
+              p_phone: formData.phone,
+              p_team_name: team.team_name,
+              p_college_code: team.college_code,
+              p_is_team_leader: false,
+              p_session_id: team.session_id,
+              p_join_code: team.join_code,
+              p_user_id: user?.id || null
+            });
+
+          if (upsertError || !upsertResult || upsertResult.length === 0 || !upsertResult[0].success) {
+            const errorMsg = upsertError?.message || upsertResult?.[0]?.message || 'Unknown error';
+            setError('Failed to join team: ' + errorMsg);
             setIsSubmitting(false);
             return;
           }
+
           setSuccess('Account created and joined team. Please go to email and verify your account.');
         }
       }
@@ -803,7 +789,12 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode, onForgotPasswor
 
             {/* Confirm Details Modal */}
             {showConfirmModal && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+              <PopupPortal
+                isOpen={showConfirmModal}
+                onClose={() => setShowConfirmModal(false)}
+                className="bg-black bg-opacity-60"
+                closeOnBackdropClick={false}
+              >
                 <div className="bg-gray-900 rounded-lg shadow-2xl p-6 w-full max-w-md mx-auto">
                   <h3 className="text-xl font-bold text-white mb-4">Confirm Your Details</h3>
                   <ul className="text-white space-y-2 mb-4">
@@ -841,7 +832,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode, onForgotPasswor
                     </button>
                   </div>
                 </div>
-              </div>
+              </PopupPortal>
             )}
             {/* Show join code to team leader after signup */}
             {generatedJoinCode && formData.isTeamLeader && (
@@ -1007,14 +998,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode, onForgotPasswor
               </>
             ) : (
               <>
-                {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}
+                {/* {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}
                 <button
                   type="button"
                   onClick={onToggleMode}
                   className="ml-1 font-medium text-white hover:text-blue-400 transition-colors duration-200"
                 >
                   {mode === 'login' ? 'Sign up' : 'Sign in'}
-                </button>
+                </button> */}
               </>
             )}
           </p>

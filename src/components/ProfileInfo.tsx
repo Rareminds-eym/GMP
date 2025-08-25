@@ -1,4 +1,6 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { collegeCodes as collegeCodeList } from '../data/collegeCodes';
+import { supabase } from '../lib/supabase';
 // Modern, accessible Popup component
 const Popup: React.FC<{ message: string; onClose: () => void }> = ({ message, onClose }) => {
   // Trap focus inside popup
@@ -55,8 +57,6 @@ const Popup: React.FC<{ message: string; onClose: () => void }> = ({ message, on
     </div>
   );
 };
-import { supabase } from '../lib/supabase';
-import { collegeCodes as collegeCodeList } from '../data/collegeCodes';
 
 interface ProfileInfoProps {
   email: string;
@@ -431,7 +431,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({
               )}
             </ul>
 
-            {/* hasMissingData && (
+            {hasMissingData && (
               <div className="w-full mb-4">
                 <p className="text-red-200 text-sm mb-2 text-center">Some information is missing from your profile.</p>
                 <button
@@ -441,7 +441,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({
                   Complete Profile
                 </button>
               </div>
-            ) */}
+            )}
           </>
         ) : (
           <div className="w-full space-y-4">

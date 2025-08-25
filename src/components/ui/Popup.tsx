@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { LevelProgressService } from "../../services/levelProgressService";
 import { useLevelProgress } from "../../hooks/useLevelProgress";
+import PopupPortal from "./PopupPortal";
 
 // Unified Popup Component Interface
 interface PopupProps {
@@ -142,15 +143,14 @@ export const Popup: React.FC<PopupProps> = ({
   const isVictory = variant === 'victory';
 
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.35, ease: "easeInOut" }}
-        >
+    <PopupPortal
+      isOpen={open}
+      onClose={onClose}
+      className="bg-black/60 backdrop-blur-sm"
+      closeOnBackdropClick={false}
+    >
+      <AnimatePresence>
+        {open && (
           <motion.div
             className={`pixel-border-thick bg-gradient-to-br from-gray-900 via-indigo-900 to-blue-900 text-cyan-100 shadow-2xl relative overflow-hidden ${
               isMobileHorizontal
@@ -520,10 +520,10 @@ export const Popup: React.FC<PopupProps> = ({
                 </>
               )}
             </div>
-          </motion.div>
         </motion.div>
-      )}
-    </AnimatePresence>
+        )}
+      </AnimatePresence>
+    </PopupPortal>
   );
 };
 

@@ -8,6 +8,8 @@ interface SignupExtraFields {
   collegeCode: string;
   teamLead: string;
   teamMembers: string[];
+  sessionId?: string;
+  joinCode?: string;
 }
 
 interface AuthContextType {
@@ -121,7 +123,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               college_code: extraFields.collegeCode,
               team_lead: extraFields.teamLead,
               team_members: extraFields.teamMembers,
-              join_code: (extraFields as any).joinCode,
+              join_code: extraFields.joinCode,
+              session_id: extraFields.sessionId,
             } : {})
           }
         }
