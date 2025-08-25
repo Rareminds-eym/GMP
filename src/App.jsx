@@ -198,7 +198,7 @@ function App() {
         { path: '/modules', element: <ProtectedRoute><ModuleMapScreen /></ProtectedRoute>, errorElement: <RouteErrorBoundary /> },
         { path: '/modules/HL1', element: <ProtectedRoute><GmpSimulationScreen mode="violation-root-cause" /></ProtectedRoute>, errorElement: <RouteErrorBoundary /> },
         { path: '/modules/HL2', element: <ProtectedRoute><GmpSimulationScreen mode="solution" /></ProtectedRoute>, errorElement: <RouteErrorBoundary /> },
-        { path: '/modules/HL2/innovation', element: <ProtectedRoute><Level2Screen3 /></ProtectedRoute>, errorElement: <RouteErrorBoundary /> },
+        // { path: '/modules/HL2/innovation', element: <ProtectedRoute><Level2Screen3 /></ProtectedRoute>, errorElement: <RouteErrorBoundary /> },
         { path: '/modules/:moduleId', element: <ProtectedRoute><LevelList /></ProtectedRoute>, errorElement: <RouteErrorBoundary /> },
         { path: '/modules/:moduleId/levels/1', element: <ProtectedRoute><BingoGame /></ProtectedRoute>, errorElement: <RouteErrorBoundary /> },
         { path: '/modules/:moduleId/levels/2', element: <ProtectedRoute><Level2 /></ProtectedRoute>, errorElement: <RouteErrorBoundary /> },
