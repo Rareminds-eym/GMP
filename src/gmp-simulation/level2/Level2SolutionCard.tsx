@@ -88,44 +88,45 @@ const Level2SolutionCard: React.FC<Level2SolutionCardProps> = ({ question, selec
   let session_id = window.sessionStorage.getItem('session_id') || "";
   let email = window.sessionStorage.getItem('email') || "";
 
-  // If session_id or email missing, try to fetch from winners_list_l1
+  // If session_id or email missing, derive from authenticated user or winners_list_l1 (no prompts)
   useEffect(() => {
-    async function fetchAndSetUserFromWinnersList() {
-      if (session_id && email) {
-        console.log('[DEBUG] On mount: session_id:', session_id, 'email:', email);
-        return;
-      }
-      // Try to get from winners_list_l1 using another identifier (e.g., localStorage, or prompt user)
-      // For demo, try to get by email prompt if not set
-      let userEmail = email;
-      if (!userEmail) {
-        userEmail = window.prompt('Enter your email to continue:') || "";
-      }
-      if (!userEmail) {
-        console.warn('[DEBUG] No email provided, cannot fetch user.');
-        return;
-      }
-      // Fetch from Supabase
-      const { data, error } = await supabase
-        .from('winners_list_l1')
-        .select('session_id,email')
-        .eq('email', userEmail)
-        .single();
-      if (error || !data) {
-        console.error('[DEBUG] Could not fetch user from winners_list_l1:', error?.message);
-        return;
-      }
-      if (data.session_id && data.email) {
-        window.sessionStorage.setItem('session_id', data.session_id);
-        window.sessionStorage.setItem('email', data.email);
-        session_id = data.session_id;
-        email = data.email;
-        console.log('[DEBUG] Set session_id and email from winners_list_l1:', session_id, email);
-        // Optionally, reload the page or re-render state
-        window.location.reload();
+    async function initUser() {
+      try {
+        // Prefer authenticated user
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) {
+          console.warn('[Level2SolutionCard] Auth not ready:', authError.message);
+        }
+
+        const authEmail = user?.email || email;
+        if (authEmail) {
+          email = authEmail;
+          window.sessionStorage.setItem('email', authEmail);
+        }
+
+        let sid = window.sessionStorage.getItem('session_id') || (user?.user_metadata as any)?.session_id || session_id;
+
+        // Fallback: look up session_id using winners_list_l1 by authenticated email
+        if (!sid && authEmail) {
+          const { data, error } = await supabase
+            .from('winners_list_l1')
+            .select('session_id')
+            .eq('email', authEmail)
+            .maybeSingle();
+          if (!error && data?.session_id) {
+            sid = data.session_id as string;
+          }
+        }
+
+        if (sid) {
+          session_id = sid;
+          window.sessionStorage.setItem('session_id', sid);
+        }
+      } catch (e) {
+        console.error('[Level2SolutionCard] initUser error', e);
       }
     }
-    fetchAndSetUserFromWinnersList();
+    initUser();
   }, []);
   const module_number = 6; // or get from props/context if dynamic
 
