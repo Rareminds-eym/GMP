@@ -9,6 +9,7 @@ import Toast from '../Toast';
 // Add interface for ref methods
 export interface PrototypeStageRef {
   uploadSelectedFile: () => Promise<boolean>;
+  getLastUploadError: () => string | null;
 }
 
 const PrototypeStage = forwardRef(
@@ -36,7 +37,7 @@ const PrototypeStage = forwardRef(
     return () => clearTimeout(focusTimeout);
   }, []);
 
-  // Expose upload method to parent via ref
+  // Expose upload method and last error to parent via ref
   useImperativeHandle(ref, () => ({
     uploadSelectedFile: async (): Promise<boolean> => {
       if (!selectedFile) {
@@ -50,7 +51,8 @@ const PrototypeStage = forwardRef(
         console.error('Upload failed during confirmation:', error);
         return false;
       }
-    }
+    },
+    getLastUploadError: () => uploadError
   }));
 
   const uploadFileToCloud = async (file: File, isRetry = false): Promise<boolean> => {
