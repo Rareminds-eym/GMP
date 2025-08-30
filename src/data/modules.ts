@@ -6,5 +6,5 @@ export const modules: Module[] = [
   { id: "3", status: 'locked', title: 'Cleaning Validation' },
   { id: "4", status: 'locked', title: 'Documentation' },
   { id: "HL1", status: 'locked', title: 'Hackathon Level-1' },
-  { id: "HL2", status: 'available', title: 'Hackathon Level-2' },
+  { id: "HL2", status: 'locked', title: 'Hackathon Level-2' },
 ];
