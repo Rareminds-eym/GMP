@@ -384,34 +384,39 @@ const PrototypeStage = forwardRef(
                 <Upload className={`${isMobileHorizontal ? 'w-12 h-12' : 'w-16 h-16'} ${
                   isDragOver ? 'text-pink-400' : 'text-gray-400'
                 } mx-auto mb-4 transition-colors duration-300`} />
-                <label htmlFor="file-upload" className="cursor-pointer">
-                  <span className={`${isMobileHorizontal ? 'text-base' : 'text-lg'} font-black text-white mb-2 block`}>
-                    {isDragOver ? 'DROP YOUR PDF HERE' : 'UPLOAD PDF PROTOTYPE'}
-                  </span>
-                  <span className={`${
-                    isDragOver ? 'text-pink-300' : 'text-gray-400'
-                  } block mb-4 font-bold ${isMobileHorizontal ? 'text-sm' : ''} transition-colors duration-300`}>
-                    {isDragOver ? 'RELEASE TO SELECT PDF' : 'DRAG & DROP OR CLICK TO BROWSE'}
-                  </span>
-                  <input
-                    ref={fileInputRef}
-                    id="file-upload"
-                    type="file"
-                    accept="application/pdf"
-                    className="hidden"
-                    onChange={handleFileChange}
-                  />
-                  <div 
-                    className={`pixel-border inline-flex items-center px-6 py-3 bg-gradient-to-r from-pink-500 to-yellow-500 hover:from-pink-600 hover:to-yellow-600 text-white transition-colors duration-300 font-black shadow-lg ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    {isUploading ? (
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    ) : (
-                      <Upload className="w-5 h-5 mr-2" />
-                    )}
-                    {isUploading ? 'UPLOADING...' : 'SELECT FILE'}
-                  </div>
-                </label>
+                {/* Text prompts above the button (not clickable to avoid mobile label quirks) */}
+                <span className={`${isMobileHorizontal ? 'text-base' : 'text-lg'} font-black text-white mb-2 block`}>
+                  {isDragOver ? 'DROP YOUR PDF HERE' : 'UPLOAD PDF PROTOTYPE'}
+                </span>
+                <span className={`${
+                  isDragOver ? 'text-pink-300' : 'text-gray-400'
+                } block mb-4 font-bold ${isMobileHorizontal ? 'text-sm' : ''} transition-colors duration-300`}>
+                  {isDragOver ? 'RELEASE TO SELECT PDF' : 'DRAG & DROP OR CLICK TO BROWSE'}
+                </span>
+
+                {/* Hidden input and explicit button to open file picker (fixes mobile refresh) */}
+                <input
+                  ref={fileInputRef}
+                  id="file-upload"
+                  type="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  onTouchStart={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className={`pixel-border inline-flex items-center px-6 py-3 bg-gradient-to-r from-pink-500 to-yellow-500 hover:from-pink-600 hover:to-yellow-600 text-white transition-colors duration-300 font-black shadow-lg ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {isUploading ? (
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  ) : (
+                    <Upload className="w-5 h-5 mr-2" />
+                  )}
+                  {isUploading ? 'UPLOADING...' : 'SELECT FILE'}
+                </button>
                 {/* File Validation Error Display */}
                 {fileValidationError && (
                   <div 
