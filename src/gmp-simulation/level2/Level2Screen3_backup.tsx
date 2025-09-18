@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDeviceLayout } from '../../hooks/useOrientation';
 import { Lightbulb, Users, Zap, Target, Rocket, Globe, FileText, Sparkles, Upload } from 'lucide-react';
 import { StageData, StageFormData } from './types';
@@ -25,6 +25,8 @@ const Level2Screen3: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const { isMobile, isHorizontal } = useDeviceLayout();
   const isMobileHorizontal = isMobile && isHorizontal;
+  // Ref for hidden file input (mobile-safe trigger)
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Calculate progress based on completed stages
   useEffect(() => {
@@ -681,23 +683,26 @@ const Level2Screen3: React.FC = () => {
                           className={`border-2 border-dashed border-gray-600 text-center hover:border-gray-500 transition-colors duration-300 bg-gray-900/50 ${isMobileHorizontal ? 'p-4' : 'p-8'} relative`}
                         >
                           <Upload className={`${isMobileHorizontal ? 'w-12 h-12' : 'w-16 h-16'} text-gray-400 mx-auto mb-4`} />
-                          <label htmlFor="file-upload" className="cursor-pointer">
-                            <span className={`${isMobileHorizontal ? 'text-base' : 'text-lg'} font-black text-white mb-2 block`}>UPLOAD PDF PROTOTYPE</span>
-                            <span className={`text-gray-400 block mb-4 font-bold ${isMobileHorizontal ? 'text-sm' : ''}`}>DRAG & DROP OR CLICK TO BROWSE</span>
-                            <input
-                              id="file-upload"
-                              type="file"
-                              accept="application/pdf"
-                              className="hidden"
-                              onChange={handleFileChange}
-                            />
-                            <div 
-                              className="pixel-border inline-flex items-center px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white transition-colors duration-300 font-black"
-                            >
-                              <Upload className="w-5 h-5 mr-2" />
-                              SELECT FILE
-                            </div>
-                          </label>
+                          {/* Hidden input + explicit button to open picker (fixes mobile refresh) */}
+                          <span className={`${isMobileHorizontal ? 'text-base' : 'text-lg'} font-black text-white mb-2 block`}>UPLOAD PDF PROTOTYPE</span>
+                          <span className={`text-gray-400 block mb-4 font-bold ${isMobileHorizontal ? 'text-sm' : ''}`}>DRAG & DROP OR CLICK TO BROWSE</span>
+                          <input
+                            ref={fileInputRef}
+                            id="file-upload"
+                            type="file"
+                            accept="application/pdf"
+                            className="hidden"
+                            onChange={handleFileChange}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            onTouchStart={() => fileInputRef.current?.click()}
+                            className="pixel-border inline-flex items-center px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white transition-colors duration-300 font-black"
+                          >
+                            <Upload className="w-5 h-5 mr-2" />
+                            SELECT FILE
+                          </button>
                           {file && (
                             <div 
                               className={`pixel-border mt-4 bg-green-900/30 relative overflow-hidden ${isMobileHorizontal ? 'p-3' : 'p-4'}`}

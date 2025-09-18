@@ -309,7 +309,8 @@ const HomeScreen: React.FC = () => {
             </div>
           )}
           {/* Extra logos below avatar */}
-          <div className="flex flex-col items-center gap-2 mt-2">
+          
+          {/* <div className="flex flex-col items-center gap-2 mt-2">
             <a
               href="https://us06web.zoom.us/j/86412214284?pwd=I8U47ItobcPBHvKgzmwsDAckIPBFYY.1"
               target="_blank"
@@ -338,7 +339,7 @@ const HomeScreen: React.FC = () => {
                 height={32}
               />
             </a>
-          </div>
+          </div> */}
         </div>
       </div>
       {/* Profile Info Modal */}
@@ -415,12 +416,12 @@ const HomeScreen: React.FC = () => {
             }}
           >
             {[
-              { label: "Start Hackathon", onClick: startGame, shouldDisable: true },
-              {
-                label: "View Scores",
-                onClick: viewScores,
-                shouldDisable: true,
-              },
+                { label: "Start Hackathon", onClick: startGame, shouldDisable: true },
+                {
+                  label: "View Scores",
+                  onClick: viewScores,
+                  shouldDisable: false,
+                },
               {
                 label: "Instructions",
                 onClick: viewInstructions,
@@ -445,15 +446,15 @@ const HomeScreen: React.FC = () => {
                 <Button
                   onClick={btn.onClick}
                   {...(btn.variant ? { variant: btn.variant } : {})}
-                  disabled={btn.label === "View Scores" ? true : (btn.shouldDisable && isGameLocked)}
-                  className={`${
+                  disabled={btn.shouldDisable && isGameLocked}
+                  className={`$
                     layout.isMobile && layout.isHorizontal
                       ? "px-0.5 py-0 !text-[14px] min-w-[60px] !h-9 !mb-2 rounded"
                       : "px-3 py-2 text-base min-w-[120px] !h-12 rounded-lg"
-                  } ${btn.label === "View Scores" ? "!opacity-100 !cursor-not-allowed" : ""}`}
+                  }`}
                 >
                   <div className="flex items-center justify-center gap-2">
-                    {((btn.shouldDisable && isGameLocked) || btn.label === "View Scores") && (
+                    {(btn.shouldDisable && isGameLocked) && (
                       <Icon icon="mdi:lock" className="w-4 h-4" />
                     )}
                     {btn.label}
