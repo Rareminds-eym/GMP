@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 // import { ArrowLeft } from 'lucide-react';
 import { Icon } from '@iconify/react';
-import { modules } from './modulesData';
+import { useLockedScoreModules } from '../../hooks/useLockedModules';
+import { getDynamicScoreModules } from './modulesData';
 import ModuleStone from './ModuleStone';
 import ModuleDetailModal from './ModuleDetailModal';
 import { Module } from './types/GameData';
@@ -16,6 +17,14 @@ const Score: React.FC = () => {
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const { isMobile } = useDeviceLayout();
+  
+  // Get dynamic score modules - using undefined/null user email to respect base module configuration
+  // When userEmail is undefined, no dynamic rules will be applied, using the base locked status
+  const userEmail = undefined; // Change this to actual user email when you want dynamic unlocking
+  const modules = useLockedScoreModules(userEmail);
+  
+  // Also get from function as alternative (both should produce the same result)
+  // const modules = getDynamicScoreModules(userEmail);
 
   // Responsive map sizing
   const viewBoxWidth = 1200;
